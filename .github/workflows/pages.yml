@@ -1,0 +1,50 @@
+# Při každém nahrání do větve main a každou hodinu sestaví web (python build.py) a nasadí ho na GitHub Pages.
+# Hodinové sestavení přenese na web změny katalogu z administrace a zároveň udrží bezplatnou databázi
+# Supabase v provozu (bez aktivity by se po týdnu uspala). Dokud databáze není nastavená, nasadí ukázkový režim.
+# Jednorázové nastavení: Settings → Pages → Build and deployment → Source: GitHub Actions.
+# Pozn.: GitHub plánované spouštění vypne po 60 dnech bez změn v repozitáři – pak ho stačí znovu zapnout v záložce Actions.
+name: Nasazení na GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: mode
+        name: Režim (ukázkový web se podle plánu znovu nesestavuje – nemá se co změnit)
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] && ! grep -Eq "supabaseUrl:[[:space:]]*'https://" src/js/config.js; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - id: pages
+        if: steps.mode.outputs.skip != 'true'
+        uses: actions/configure-pages@v5
+      - name: Sestavení a kontrola (bez tajných klíčů, interních kontaktů a skrytých položek)
+        if: steps.mode.outputs.skip != 'true'
+        run: python3 build.py --url "${{ steps.pages.outputs.base_url }}"
+      - uses: actions/upload-pages-artifact@v4
+        if: steps.mode.outputs.skip != 'true'
+        with:
+          path: publish
+      - id: deployment
+        if: steps.mode.outputs.skip != 'true'
+        uses: actions/deploy-pages@v4

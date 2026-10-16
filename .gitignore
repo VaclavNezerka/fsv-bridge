@@ -1,0 +1,16 @@
+# Repozitář je veřejný (GitHub Pages zdarma jen z veřejného repozitáře) – nic neveřejného sem nepatří.
+
+# Interní data: kontakty pracovníků a protokol importu (generuje tools/import_expertiza.py)
+supabase/seed.sql
+tools/import-report.md
+
+# Sestavení a lokální soubory
+publish/
+build/
+.local/
+__pycache__/
+*.pyc
+.claude/
+.DS_Store
+Thumbs.db
+desktop.ini
