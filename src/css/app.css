@@ -312,11 +312,12 @@ dialog::backdrop { background: rgba(11, 42, 74, .6); }
 .dlg-inner { position: relative; padding: 28px 20px 24px; overflow: auto; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); }
 @media (min-width: 700px) { .dlg-inner { padding: 34px 36px 30px; } }
 .dlg-inner > div > h2:first-child, .dlg-inner h2#dlg-title { padding-right: 46px; }
-.dlg-close { position: absolute; right: 14px; top: 14px; background: var(--line-2); border: 0; border-radius: 50%; width: 40px; height: 40px; display: grid; place-items: center; cursor: pointer; color: var(--ink); z-index: 2; }
-.dlg-close:hover { background: var(--line); }
+/* křížek dialogu; tlačítka „Zrušit“ ve formulářích mají třídu .dlg-close jen kvůli zavírání a vypadají jako ostatní tlačítka */
+.dlg-inner > .dlg-close { position: absolute; right: 14px; top: 14px; background: var(--line-2); border: 0; border-radius: 50%; width: 40px; height: 40px; display: grid; place-items: center; cursor: pointer; color: var(--ink); z-index: 2; }
+.dlg-inner > .dlg-close:hover { background: var(--line); }
 .dlg-actions { margin-top: 18px; }
 dialog.dlg-lightbox { background: #0B1622; color: #fff; }
-dialog.dlg-lightbox .dlg-close { background: rgba(255, 255, 255, .15); color: #fff; }
+dialog.dlg-lightbox .dlg-inner > .dlg-close { background: rgba(255, 255, 255, .15); color: #fff; }
 .lb { margin: 0; text-align: center; }
 .lb img { max-height: calc(100vh - 190px); max-height: calc(100dvh - 190px); width: auto; border-radius: 8px; }
 .lb figcaption { margin-top: 10px; color: #D5DEE8; }

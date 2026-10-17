@@ -118,6 +118,9 @@ function toastEl() {
 }
 export function toast(msg, kind = 'info') {
   const t = toastEl();
+  // otevřený modální dialog leží v horní vrstvě stránky – oznámení musí být v něm, jinak by zůstalo skryté pod ním
+  const host = $$('dialog[open]').pop() || document.body;
+  if (t.parentElement !== host) host.append(t);
   t.setAttribute('aria-live', kind === 'err' ? 'assertive' : 'polite');
   t.className = 'toast toast-' + kind;
   t.textContent = msg;

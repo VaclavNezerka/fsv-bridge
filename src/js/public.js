@@ -634,7 +634,17 @@ export function viewRequest() {
 
       counter();
       form.addEventListener('focusin', startPow, { once: true });
-      form.addEventListener('input', (e) => { if ([...FIELDS, 'typ', 'nda'].includes(e.target.name)) { saveDraft(); if (e.target.name === 'popis') counter(); } });
+      form.addEventListener('input', (e) => {
+        const k = e.target.name;
+        if (![...FIELDS, 'typ', 'nda'].includes(k)) return;
+        saveDraft();
+        if (k === 'popis') counter();
+        // opravené pole přestane chybu ukazovat hned (souhrn chyb se obnoví při dalším odeslání)
+        if (FIELDS.includes(k) && $(`[data-field="${k}"]`, root)?.classList.contains('has-error')) {
+          const errs = validateRequest(Object.fromEntries(FIELDS.map((f) => [f, form.elements[f].value.trim()])));
+          if (!errs[k]) setError(k, '');
+        }
+      });
       form.addEventListener('change', (e) => { if (e.target.id === 'f-files') { addFiles(Array.from(e.target.files)); e.target.value = ''; } });
       root.addEventListener('click', (e) => {
         const rm = e.target.closest('[data-remove]');
