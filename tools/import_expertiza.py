@@ -37,6 +37,7 @@ OUT_IMG = ROOT / "src" / "img" / "exp"
 OUT_SEED = ROOT / "supabase" / "seed.sql"
 OUT_REPORT = ROOT / "tools" / "import-report.md"
 OUT_CACHE = ROOT / "tools" / "foto-cache.json"
+DOPLNKY = ROOT / "tools" / "doplnene_nabidky.json"  # témata doplněná ručně mimo podklady pracovišť
 Image.MAX_IMAGE_PIXELS = 150_000_000
 MAX_PHOTOS_OFFER = 4
 MAX_PHOTOS_REF = 3
@@ -1069,6 +1070,37 @@ def make_photos(pics, base, limit, captions, warnings):
     return foto
 
 
+def doplnit_nabidky(nabidky, used_ids, report, warnings):
+    """Témata z tools/doplnene_nabidky.json – zařadí se za témata téhož pracoviště, fotky se převedou jako ostatní."""
+    if not DOPLNKY.exists():
+        return
+    for t in json.loads(DOPLNKY.read_text(encoding="utf-8")).get("nabidky", []):
+        oid, dept = t["id"], t["pracoviste"]
+        if dept not in PRACOVISTE or oid in used_ids:
+            warnings.append(f"- doplněné téma přeskočeno (neznámé pracoviště nebo obsazené id): `{oid}`")
+            continue
+        used_ids.add(oid)
+        foto = []
+        for f in t.get("foto", [])[:MAX_PHOTOS_OFFER]:
+            src = ROOT / f["zdroj"]
+            res = process_image(src, f"{oid}-{len(foto) + 1}") if src.exists() else {"error": "soubor nenalezen"}
+            if res and "error" not in res:
+                foto.append({**res, "popis": f.get("popis", "")})
+            else:
+                warnings.append(f"- fotku doplněného tématu nelze použít `{f['zdroj']}`: {(res or {}).get('error', 'nevhodný rozměr')}")
+        item = {"id": oid, "pracoviste": dept, "kategorie": t.get("kategorie") or PRACOVISTE[dept][1],
+                "nazev": t["nazev"], "popis": t.get("popis", ""), "anotace": t.get("anotace", []), "vysledky": t.get("vysledky", []),
+                "garanti": t.get("garanti", []), "kontakty": [], "klicova_slova": t.get("klicova_slova", []),
+                "horizon": t.get("horizon", ""), "laborator": t.get("laborator", ""), "vystupy": t.get("vystupy", ""),
+                "formy": t.get("formy", ""), "web": t.get("web", ""), "foto": foto, "zverejneno": True, "poradi": 0,
+                "zdroj": DOPLNKY.relative_to(ROOT).as_posix()}
+        za = max((i for i, n in enumerate(nabidky) if n["pracoviste"] == dept), default=len(nabidky) - 1)
+        nabidky.insert(za + 1, item)
+        report.append(f"- doplněné téma **{t['nazev']}** ({dept}): {len(item['anotace'])} bodů, {len(foto)} fotek – `{item['zdroj']}`")
+    for i, n in enumerate(nabidky):
+        n["poradi"] = i + 1
+
+
 # --------------------------------------------------------------------------- hlavní běh
 def main():
     if len(sys.argv) < 2:
@@ -1192,6 +1224,7 @@ def main():
             zf.close()
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    doplnit_nabidky(nabidky, used_ids, report, warnings)
 
     used = {n["pracoviste"] for n in nabidky} | {r["pracoviste"] for r in reference}
     pracoviste = [{"kod": k, "nazev": PRACOVISTE[k][0], "kategorie": PRACOVISTE[k][1], "poradi": i + 1}

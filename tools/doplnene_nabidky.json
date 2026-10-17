@@ -1,0 +1,99 @@
+{
+ "_poznamka": "Témata expertízy doplněná na žádost koordinátora mimo podklady pracovišť (17. 10. 2026). Importér je přidá za témata téhož pracoviště. Jen veřejné údaje – interní kontakty sem nepatří. Fotky: cesta k obrázku v repozitáři (zdroj) a popisek.",
+ "nabidky": [
+  {
+   "id": "k102-korelace-digitalniho-obrazu-dic",
+   "pracoviste": "K102",
+   "kategorie": "digitalizace",
+   "nazev": "Korelace digitálního obrazu (DIC) – bezkontaktní měření posunů a přetvoření",
+   "popis": "Optická metoda, která ze série snímků vyhodnotí posuny a přetvoření celého sledovaného povrchu – bez lepení snímačů a bez kontaktu s konstrukcí. Měříme v laboratoři i přímo na stavbě, z bezpečné vzdálenosti.",
+   "anotace": [
+    "Průhyby a posuny mostů a dalších konstrukcí při statických zatěžovacích zkouškách – pole posunů celé mostovky místo několika bodových snímačů",
+    "Zatěžovací zkoušky podloží a stavebních dílců (panely, nosníky) – pole posunů a stanovení modulu pružnosti pro kalibraci výpočetních modelů",
+    "3D (stereo) DIC se dvěma až třemi kamerami na velkých fyzikálních modelech, i v náročných podmínkách, například při řízeném požáru",
+    "Sledování vzniku a šíření trhlin, otevírání spár a lokálních přetvoření",
+    "Laboratorní zkoušky materiálů a dílců – pole přetvoření při tahu, tlaku a ohybu, virtuální extenzometry",
+    "Dlouhodobá měření, například smršťování a dotvarování betonu",
+    "Vyhodnocení vlastními nástroji Ncorr_post a PyVEx – grafy a videa průběhu, závěrečná zpráva s interpretací výsledků"
+   ],
+   "vysledky": [
+    "Zatěžovací zkouška mostu na dálnici D6 – průhyb s přesností 0,25 mm, ověřeno proti snímačům LVDT",
+    "Pětiletá kampaň měření smršťování a dotvarování 21 betonových trámů",
+    "Měření pro stavební firmy i výzkumné instituce: zatěžovací zkoušky mostů, podloží a stavebních dílců, 3D DIC na velkém modelu skalního bloku při požáru",
+    "Metodika publikovaná v časopisech Experimental Techniques, Materials and Structures a Construction and Building Materials; otevřený software a data na Zenodo"
+   ],
+   "garanti": [
+    {"jmeno": "doc. Ing. Václav Nežerka, Ph.D.", "oblast": "Korelace digitálního obrazu, optická měření v laboratoři i in-situ, vývoj vyhodnocovacího softwaru"}
+   ],
+   "klicova_slova": ["korelace digitálního obrazu", "DIC", "bezkontaktní měření", "pole posunů", "zatěžovací zkoušky", "trhliny"],
+   "horizon": "",
+   "laborator": "",
+   "vystupy": "Pole posunů a přetvoření, průběhy v kontrolních bodech, videa a závěrečná zpráva s interpretací",
+   "formy": "Měření na zakázku, expertízy, smluvní výzkum a společné projekty",
+   "web": "",
+   "foto": [
+    {"zdroj": "src/img/exp/ref-k102-bezkontaktni-opticka-mereni-deformaci-od-laboratore-1.webp", "popis": "Zatěžovací zkouška mostu – průhyby mostovky v kontrolních bodech vyhodnocené metodou DIC"},
+    {"zdroj": "src/img/exp/ref-k102-bezkontaktni-opticka-mereni-deformaci-od-laboratore-2.webp", "popis": "Vyhodnocení ve vlastním nástroji Ncorr_post – virtuální extenzometry a grafy posunů"},
+    {"zdroj": "src/img/exp/ref-k102-bezkontaktni-opticka-mereni-deformaci-od-laboratore-3.webp", "popis": "Pole přetvoření a vektory posunů v okolí otvoru ve vzorku"}
+   ]
+  },
+  {
+   "id": "k102-iot-mereni-a-monitoring",
+   "pracoviste": "K102",
+   "kategorie": "digitalizace",
+   "nazev": "IoT měření a monitoring – senzory, kamery a umělá inteligence v zařízení",
+   "popis": "Navrhneme a zprovozníme autonomní měřicí a kamerové jednotky, které sbírají data na stavbě, v provozu nebo v terénu a posílají je do cloudu – od jednoduchých senzorů po kamery, které obraz vyhodnotí samy.",
+   "anotace": [
+    "Autonomní IoT jednotky na míru – mikrokontrolér (např. ESP32), senzory a kamery, solární napájení a provoz s minimální spotřebou energie",
+    "Bezdrátový přenos dat sítěmi LPWAN/NB-IoT a cloudové platformy pro správu zařízení, ukládání a zobrazení dat",
+    "Edge AI – neuronové sítě běžící přímo v zařízení, které místo celých snímků posílají jen výsledek (např. druh materiálu a míru zaplnění)",
+    "Kamerové systémy pro monitoring provozu – kontrola přijímaného materiálu v recyklačních střediscích, čtení registračních značek vozidel",
+    "Příprava anotovaných datových sad a trénink modelů strojového učení pro automatické vyhodnocení",
+    "Dlouhodobý monitoring v provozu i v terénu s přístupem k datům přes webové rozhraní"
+   ],
+   "vysledky": [
+    "Chytrý kontejner pro autonomní monitorování stavebního odpadu (projekt Horizon Europe RECONMATIC) – rozpoznání materiálu s přesností 92 % a zaplnění 95 % přímo v zařízení, spotřeba 3,3 µA v hlubokém spánku, otevřený kód"
+   ],
+   "garanti": [
+    {"jmeno": "doc. Ing. Václav Nežerka, Ph.D.", "oblast": "IoT a edge AI, kamerové systémy, strojové učení"}
+   ],
+   "klicova_slova": ["IoT", "monitoring", "edge AI", "NB-IoT", "senzory", "kamerové systémy"],
+   "horizon": "",
+   "laborator": "",
+   "vystupy": "Funkční měřicí jednotky, data v cloudu s webovým rozhraním, datové sady a modely strojového učení",
+   "formy": "Vývoj na zakázku, smluvní výzkum a společné projekty",
+   "web": "",
+   "foto": [
+    {"zdroj": "src/img/exp/ref-k102-chytry-kontejner-autonomni-monitorovani-stavebniho-1.webp", "popis": "Snímky z autonomní IoT kamery v kontejneru na stavební odpad při různém zaplnění"},
+    {"zdroj": "src/img/exp/ref-k102-chytry-kontejner-autonomni-monitorovani-stavebniho-2.webp", "popis": "Přesnost rozpoznání míry zaplnění modelem běžícím přímo v zařízení"},
+    {"zdroj": "src/img/exp/ref-k102-chytry-kontejner-autonomni-monitorovani-stavebniho-3.webp", "popis": "Odběr proudu IoT jednotky při odesílání snímků a telemetrie"}
+   ]
+  },
+  {
+   "id": "k132-vysokorychlostni-kamera-zaznam-rychlych-deju",
+   "pracoviste": "K132",
+   "kategorie": "digitalizace",
+   "nazev": "Vysokorychlostní kamera – záznam a vyhodnocení rychlých dějů",
+   "popis": "Zachytíme děje, které lidské oko ani běžná kamera nepostřehne – nárazy, lomy, výbuchy, průlety projektilů nebo kmitání – s frekvencí až 100 000 snímků za sekundu, a záznam kvantitativně vyhodnotíme.",
+   "anotace": [
+    "Záznam rychlých dějů s frekvencí až 100 000 snímků za sekundu, včetně návrhu snímací sestavy a osvětlení",
+    "Vyhodnocení rychlostí a trajektorií, například průletů projektilů nebo odletu úlomků",
+    "Záznam rázových a dynamických zkoušek materiálů a konstrukčních prvků – vznik a šíření trhlin, porušení při nárazu",
+    "Vysokorychlostní korelace digitálního obrazu – pole posunů a přetvoření během rychlého děje",
+    "Měření v laboratoři i v terénu, například na střelnici – instalace, synchronizace se zkouškou a záznam na místě",
+    "Výstupem jsou zpomalené videosekvence, vyhodnocené veličiny a závěrečná zpráva"
+   ],
+   "vysledky": [],
+   "garanti": [
+    {"jmeno": "doc. Ing. Václav Nežerka, Ph.D.", "oblast": "Vysokorychlostní záznam a jeho vyhodnocení, korelace digitálního obrazu (Katedra fyziky)"}
+   ],
+   "klicova_slova": ["vysokorychlostní kamera", "rychlé děje", "rázové zkoušky", "balistika", "DIC"],
+   "horizon": "",
+   "laborator": "ve spolupráci s Katedrou fyziky",
+   "vystupy": "Zpomalené videosekvence, rychlosti a trajektorie, pole posunů a závěrečná zpráva",
+   "formy": "Měření na zakázku, smluvní výzkum a společné projekty",
+   "web": "",
+   "foto": []
+  }
+ ]
+}

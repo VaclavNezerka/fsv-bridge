@@ -29,6 +29,7 @@ src/                         web: HTML, CSS a JavaScript bez knihoven a bez sest
 supabase/schema.sql          databáze, pravidla přístupu a úložiště souborů
 supabase/seed.sql            katalog včetně interních kontaktů – jen lokálně, není v repozitáři
 tools/import_expertiza.py    převod podkladů pracovišť (DOCX, ZIP) do katalogu
+tools/doplnene_nabidky.json  témata doplněná ručně mimo podklady pracovišť (importér je přidá)
 tools/preklad_katalogu.py    stav, export a sloučení anglického překladu katalogu
 tools/foto-cache.json        mezipaměť převodu fotografií (zrychluje import)
 tools/serve.py               lokální náhled
@@ -79,7 +80,7 @@ Katalog vznikl z podkladů pracovišť (složka `expertiza`, dokumenty DOCX a ZI
 python tools/import_expertiza.py "cesta/ke/složce/expertiza"
 ```
 
-Příkaz přegeneruje `src/data/expertiza.json`, fotografie, `supabase/seed.sql` a protokol `tools/import-report.md` se seznamem míst ke kontrole (skryté položky, strojové překlady, chybějící údaje). Trvá asi minutu: fotografie, které se nezměnily, se znovu nepřevádějí (mezipaměť `tools/foto-cache.json`). Opravy překlepů v podkladech jsou v tabulce `TEXT_FIXES`, skryté položky v `SKRYT`.
+Příkaz přegeneruje `src/data/expertiza.json`, fotografie, `supabase/seed.sql` a protokol `tools/import-report.md` se seznamem míst ke kontrole (skryté položky, strojové překlady, chybějící údaje). Trvá asi minutu: fotografie, které se nezměnily, se znovu nepřevádějí (mezipaměť `tools/foto-cache.json`). Opravy překlepů v podkladech jsou v tabulce `TEXT_FIXES`, skryté položky v `SKRYT`. Témata, která pracoviště nedodala ve wordových podkladech (např. korelace digitálního obrazu, vysokorychlostní kamera a IoT měření), jsou v souboru `tools/doplnene_nabidky.json`. Importér je zařadí za ostatní témata téhož pracoviště a jejich fotky převede stejně jako ostatní.
 
 Po napojení na databázi se katalog upravuje v administraci a import slouží jen k doplnění nových podkladů. Identifikátory položek (a tím i adresy stránek) vznikají z názvů – názvy už zveřejněných položek proto měňte v administraci, ne v podkladech.
 

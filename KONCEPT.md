@@ -12,7 +12,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 
 | Uživatel | Cíl | Co mu aplikace nabízí |
 |---|---|---|
-| Zadavatel z praxe (firma, projektant, investor, obec) | Rychle zjistit, zda a jak fakulta pomůže | Přehled 108 témat expertízy a 45 výzkumných projektů z 25 pracovišť (říjen 2026). Formulář na jedné stránce bez registrace a odpověď zpravidla do 10 pracovních dnů |
+| Zadavatel z praxe (firma, projektant, investor, obec) | Rychle zjistit, zda a jak fakulta pomůže | Přehled 111 témat expertízy a 45 výzkumných projektů z 25 pracovišť (říjen 2026). Formulář na jedné stránce bez registrace a odpověď zpravidla do 10 pracovních dnů |
 | Koordinátor (správce) | Třídit poptávky, předávat je pracovištím a sledovat zakázky | Přehled poptávek a zakázek se stavem rozpracovanosti, lhůtami a historií, vlastní dokumenty k zakázce, hodnota, poznámky, zpětná vazba a kontakty pro další spolupráci, e-mailové šablony, export CSV, úpravy přehledu expertízy a projektů |
 | Pracoviště fakulty | Získat zakázky a partnery | Prezentaci své expertízy a předané poptávky s kontaktem na zadavatele |
 
