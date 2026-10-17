@@ -36,7 +36,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 | Realizované projekty | `#/reference`, `#/reference/<id>` | Výzkumné a vývojové projekty: co bylo potřeba, co fakulta vyvinula, přínos. Zakázkové reference se nezveřejňují |
 | Zadat poptávku | `#/poptavka`, `#/odeslano` | Formulář na jedné stránce. Výsledkem je číslo poptávky (např. PH-2026-0001) a popis dalšího postupu |
 | Právní informace | `#/osobni-udaje`, `#/podminky`, `#/pristupnost` | Návrhy textů k posouzení |
-| Administrace | `#/admin/…` | Poptávky a zakázky, expertíza, reference, pracoviště a účet (dvoufázové ověření, změna hesla) |
+| Administrace | `#/admin/…` (zámek „Admin“ vpravo nahoře) | Poptávky a zakázky, expertíza, reference, pracoviště a účet (vlastní údaje, změna hesla, další správci, dvoufázové ověření) |
 
 ## 5. Ochrana proti robotům bez CAPTCHA
 
@@ -63,7 +63,7 @@ Kdyby spam přesto pronikal, lze doplnit Cloudflare Turnstile. Jde o neviditelno
 - Přílohy leží v neveřejném úložišti. Správce je stahuje přes odkazy platné 2 minuty. Vlastní dokumenty koordinátora k zakázce leží ve stejné složce v podsložce `interni/`; zadavatel je nevidí a veřejné limity nahrávání se na ně nevztahují.
 - Web nepoužívá cookies ani analytiku a nenačítá nic z cizích serverů. Bezpečnostní politika obsahu (CSP) povoluje spojení jen s vlastní databází.
 - Upozornění na novou poptávku (volitelný webhook) obsahuje jen číslo poptávky.
-- Registrace jsou vypnuté. Správce se zakládá ručně (viz [SUPABASE.md](SUPABASE.md)).
+- Registrace jsou vypnuté. Účet nového správce se vytvoří nebo pozve v Supabase a správce ho pak v administraci (záložka Účet) přidá mezi správce. Sám sebe ani posledního správce odebrat nelze (viz [SUPABASE.md](SUPABASE.md)).
 - Administrace se odmítne zobrazit ve vloženém rámu cizí stránky (ochrana proti clickjackingu; GitHub Pages neumožňuje hlavičku `frame-ancestors`).
 - Potvrzovací dialogy (mazání, anonymizace) se otevírají nad detailem – zrušení nezavře rozpracovaný formulář. Obsah dialogů s osobními údaji se po zavření hned maže ze stránky.
 - Export CSV je chráněný proti vložení vzorců (CSV injection).

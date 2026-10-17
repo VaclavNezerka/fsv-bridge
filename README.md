@@ -41,7 +41,7 @@ Stačí Python 3. Spusťte z kořene projektu:
 python tools/serve.py
 ```
 
-Pak otevřete <http://127.0.0.1:8765/>. Bez napojení na databázi běží web v **ukázkovém režimu**: poptávky, zakázky a jejich dokumenty se ukládají jen v prohlížeči. Do administrace se přihlašuje e-mail koordinátora s heslem, které nastavíte příkazem `python tools/heslo_spravce.py` (v kódu je uložen jen otisk hesla). Při prvním přihlášení se v administraci objeví tři vzorové zakázky – poptaná, běžící a dokončená.
+Pak otevřete <http://127.0.0.1:8765/>. Bez napojení na databázi běží web v **ukázkovém režimu**: poptávky, zakázky a jejich dokumenty se ukládají jen v prohlížeči. Do administrace vede zámek **Admin** vpravo nahoře. Přihlašuje se e-mail koordinátora s výchozím heslem, které nastavíte příkazem `python tools/heslo_spravce.py` (v kódu je uložen jen otisk hesla). Při prvním přihlášení se v administraci objeví tři vzorové zakázky – poptaná, běžící a dokončená. V záložce **Účet** lze upravit své údaje, změnit heslo a přidat další správce – v ukázkovém režimu to ale platí jen v daném prohlížeči.
 
 ## Zveřejnění na GitHub Pages
 
@@ -82,7 +82,8 @@ Po napojení na databázi se katalog upravuje v administraci a import slouží j
 ## Kde co upravit
 
 - **Kontakt koordinátora, lhůta odpovědi, pověřenec, datum prohlášení o přístupnosti, pruh „Testovací verze“:** `src/js/config.js`
-- **Heslo správce v ukázkovém režimu:** `python tools/heslo_spravce.py`, pak `git commit -am "Heslo správce"` a `git push`
+- **Výchozí heslo správce v ukázkovém režimu:** `python tools/heslo_spravce.py`, pak `git commit -am "Heslo správce"` a `git push`
+- **Vlastní údaje, heslo a další správci:** v administraci v záložce **Účet**
 - **Právní informace** (zpracování osobních údajů, podmínky, přístupnost): objekt `DOCS` v `src/js/public.js`
 - **Barvy a písmo:** proměnné v `:root` v `src/css/app.css`
 - **Témata expertízy, projekty, pracoviště:** v administraci webu

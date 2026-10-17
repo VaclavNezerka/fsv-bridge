@@ -58,6 +58,8 @@ function setNav(open) {
   $('.nav-toggle').setAttribute('aria-expanded', String(open));
 }
 function markNav(first) {
+  const adm = $('.admin-link');
+  if (first === 'admin') adm?.setAttribute('aria-current', 'page'); else adm?.removeAttribute('aria-current');
   $$('#nav a').forEach((a) => {
     const target = a.getAttribute('href').replace(/^#\/?/, '').split('/')[0];
     if (target === (first || '') || (first === 'odeslano' && target === 'poptavka')) a.setAttribute('aria-current', 'page');

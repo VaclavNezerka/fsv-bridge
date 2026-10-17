@@ -22,7 +22,8 @@ export const CONFIG = {
 
 export const LIVE = Boolean(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey);
 
-// Správce v ukázkovém režimu (bez databáze). Uložen je jen otisk hesla (PBKDF2), ne heslo.
-// Nové heslo nastavíte příkazem: python tools/heslo_spravce.py
+// Výchozí správce v ukázkovém režimu (bez databáze). Uložen je jen otisk hesla (PBKDF2), ne heslo.
+// Nové výchozí heslo nastavíte příkazem: python tools/heslo_spravce.py
+// Změny v administraci (záložka Účet: heslo, údaje, další správci) platí jen v daném prohlížeči.
 // Data jsou v tomto režimu jen v prohlížeči správce – skutečné zabezpečení přinese databáze (SUPABASE.md).
 export const DEMO_ADMIN = { email: 'vaclav.nezerka@cvut.cz', salt: '90283d69c1c6fd2c36deac1d80773d0d', iterations: 600000, hash: '4c91c29538f4939539996c9a7c87236d486ac6bca750798d972aa5f92ed4159a' };

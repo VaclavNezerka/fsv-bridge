@@ -54,6 +54,8 @@ Celé nastavení zabere asi 30 minut. Hesla a klíče do tohoto návodu ani do r
      update private.settings set value = 'true'  where key = 'require_mfa';  -- ostrý provoz
      ```
 
+Další správce pak přidáte přímo v administraci: v Supabase jeho účet vytvořte nebo pozvěte (**Authentication → Users → Invite user**) a v záložce **Účet → Správci** ho přidejte podle e-mailu. Tam lze správce i odebrat (sebe ani posledního správce ne).
+
 Oprávnění ověřuje databáze. Kdo není v tabulce správců nebo nemá ověřený druhý faktor, neuvidí poptávky, přílohy ani interní kontakty, ani když zná heslo.
 
 ## 4. Propojení webu

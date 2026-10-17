@@ -930,37 +930,64 @@ export function viewAccount({ setup = false } = {}) {
     html: shell('ucet', `<div id="acc">${loading()}</div>`, { limited: setup }),
     async mount(root) {
       const box = $('#acc', root);
-      if (!LIVE) {
-        box.innerHTML = `<div class="card"><h2>Účet správce</h2>
-          <p>Web zatím běží v ukázkovém režimu bez databáze. Přihlašujete se e-mailem <code>${esc(DEMO_ADMIN.email)}</code>; zakázky a dokumenty se ukládají jen v tomto prohlížeči, proto si je pravidelně zálohujte exportem CSV.</p>
-          <p><strong>Změna hesla:</strong> ve složce projektu spusťte <code>python tools/heslo_spravce.py</code> a změnu nahrajte na web (<code>git commit -am "Heslo správce"</code> a <code>git push</code>). Do kódu se ukládá jen otisk hesla.</p>
-          <p class="muted">Dvoufázové ověření, více správců a sdílení dat mezi zařízeními přinese napojení na databázi (viz SUPABASE.md).</p></div>`;
-        return;
-      }
-      const recovery = ss.get('ph-recovery') === '1';
+      const recovery = LIVE && ss.get('ph-recovery') === '1';
+      const busy = async (btn, fn) => { btn.disabled = true; try { await fn(); } finally { btn.disabled = false; } };
       const render = async () => {
+        let me = null;
+        let admins = [];
         let factors = [];
         let st = null;
         try {
-          factors = (await api.mfaFactors()).filter((f) => f.status === 'verified');
-          st = await api.adminStatus();
+          me = await api.me();
+          if (!setup) admins = await api.listAdmins(); // bez dvoufázového ověření databáze seznam nevydá
+          if (LIVE) {
+            factors = (await api.mfaFactors()).filter((f) => f.status === 'verified');
+            st = await api.adminStatus();
+          }
         } catch (e) { box.innerHTML = failBox(e); return; }
+        const field = (id, label, val, { type = 'text', auto = '', hint = '', req = false } = {}) => `<div class="field"><label for="a-${id}">${esc(label)}${req ? ' <span class="req" aria-hidden="true">*</span>' : ''}</label>
+          ${hint ? `<p class="hint" id="h-a-${id}">${esc(hint)}</p>` : ''}<input id="a-${id}" name="${id}" type="${type}" value="${esc(val ?? '')}"${auto ? ` autocomplete="${auto}"` : ''}${hint ? ` aria-describedby="h-a-${id}"` : ''}></div>`;
         box.innerHTML = `${setup ? `<div class="note note-warn">${icon('shield', 20)}<p><strong>Nejdřív zapněte dvoufázové ověření.</strong> Poptávky, kontakty a přílohy zadavatelů se zobrazí až po něm – ochrání je i při úniku hesla.</p></div>` : ''}
           ${recovery ? `<div class="note">${icon('key', 20)}<p><strong>Nastavte si nové heslo</strong> ve formuláři níže.</p></div>` : ''}
+          ${LIVE ? '' : `<div class="note">${icon('info', 20)}<p><strong>Ukázkový režim bez databáze:</strong> změny účtů a noví správci platí jen v tomto prohlížeči – nový správce se přihlásí jen zde, na jiném zařízení platí výchozí přihlášení z nastavení webu. Sdílené účty pro více zařízení, dvoufázové ověření a obnovu hesla e-mailem přinese databáze.</p></div>`}
           <div class="grid account-grid">
-          <section class="card"><h2>${icon('shield', 22)} Dvoufázové ověření</h2>
-            ${factors.length ? `<p class="kpi ok">${icon('check', 20)} <span>Dvoufázové ověření je zapnuté. Při přihlášení zadáváte kód z aplikace.</span></p>
-              ${st?.require_mfa ? '<p class="small muted">Ověření je pro správce povinné, proto ho nelze vypnout. Při výměně telefonu nejdřív zapněte nové zařízení.</p>'
-                : `<button type="button" class="btn btn-danger" data-act="mfa-off" data-id="${esc(factors[0].id)}">Vypnout dvoufázové ověření</button>`}`
-            : `<p>Po zapnutí budete při přihlášení zadávat kód z ověřovací aplikace v telefonu (Microsoft Authenticator, Google Authenticator apod.).</p>
-              <button type="button" class="btn btn-primary" data-act="mfa-on">Zapnout dvoufázové ověření</button><div id="mfa-setup"></div>`}
-          </section>
-          <section class="card"><h2>${icon('key', 22)} Změna hesla</h2>
-            <form data-form="pw" novalidate>
-              <div class="field"><label for="a-pw1">Nové heslo</label><p class="hint">Alespoň 12 znaků.</p><input id="a-pw1" name="pw1" type="password" autocomplete="new-password"></div>
-              <div class="field"><label for="a-pw2">Nové heslo znovu</label><input id="a-pw2" name="pw2" type="password" autocomplete="new-password"></div>
-              <button type="submit" class="btn btn-secondary">Změnit heslo</button></form>
-          </section></div>`;
+            <section class="card"><h2>${icon('user', 22)} Moje údaje</h2>
+              <form data-form="me" novalidate>
+                ${field('jmeno', 'Jméno a příjmení', me?.jmeno, { auto: 'name' })}
+                ${field('email', 'E-mail (slouží k přihlášení)', me?.email, { type: 'email', auto: 'username', req: true,
+                  hint: LIVE ? 'Novou adresu je potřeba potvrdit odkazem z e-mailu.' : '' })}
+                ${field('telefon', 'Telefon', me?.telefon, { type: 'tel', auto: 'tel' })}
+                <button type="submit" class="btn btn-secondary">Uložit údaje</button></form></section>
+            <section class="card"><h2>${icon('key', 22)} Změna hesla</h2>
+              <form data-form="pw" novalidate>
+                ${LIVE ? '' : field('pw0', 'Současné heslo', '', { type: 'password', auto: 'current-password' })}
+                ${field('pw1', 'Nové heslo', '', { type: 'password', auto: 'new-password', hint: 'Alespoň 12 znaků.' })}
+                ${field('pw2', 'Nové heslo znovu', '', { type: 'password', auto: 'new-password' })}
+                <button type="submit" class="btn btn-secondary">Změnit heslo</button></form></section>
+            ${LIVE ? `<section class="card"><h2>${icon('shield', 22)} Dvoufázové ověření</h2>
+              ${factors.length ? `<p class="kpi ok">${icon('check', 20)} <span>Dvoufázové ověření je zapnuté. Při přihlášení zadáváte kód z aplikace.</span></p>
+                ${st?.require_mfa ? '<p class="small muted">Ověření je pro správce povinné, proto ho nelze vypnout. Při výměně telefonu nejdřív zapněte nové zařízení.</p>'
+                  : `<button type="button" class="btn btn-danger" data-act="mfa-off" data-id="${esc(factors[0].id)}">Vypnout dvoufázové ověření</button>`}`
+              : `<p>Po zapnutí budete při přihlášení zadávat kód z ověřovací aplikace v telefonu (Microsoft Authenticator, Google Authenticator apod.).</p>
+                <button type="button" class="btn btn-primary" data-act="mfa-on">Zapnout dvoufázové ověření</button><div id="mfa-setup"></div>`}
+            </section>` : ''}
+            ${setup ? '' : `<section class="card card-wide"><h2>${icon('users', 22)} Správci</h2>
+              <div class="table-wrap"><table class="data"><caption class="sr-only">Správci FSv Problem Hub</caption>
+                <thead><tr><th scope="col">Jméno</th><th scope="col">E-mail</th><th scope="col">Přidán</th><th scope="col"><span class="sr-only">Akce</span></th></tr></thead>
+                <tbody>${admins.map((a) => `<tr><td><strong>${esc(a.jmeno || '—')}</strong>${a.ja ? ' <span class="badge tone-info">vy</span>' : ''}</td><td>${esc(a.email)}</td>
+                  <td class="small muted">${a.vytvoreno ? esc(fmtDate(a.vytvoreno)) : 'výchozí účet'}${a.pridal ? ` · přidal(a) ${esc(a.pridal)}` : ''}</td>
+                  <td>${a.ja ? '' : `<button type="button" class="btn btn-secondary btn-sm" data-remove-admin="${esc(a.email)}">${icon('trash', 16)} Odebrat</button>`}</td></tr>`).join('')}</tbody></table></div>
+              <form data-form="add-admin" class="add-admin" novalidate><h3>Přidat správce</h3>
+                <div class="grid-3">
+                  ${LIVE ? '' : field('n-jmeno', 'Jméno a příjmení', '')}
+                  ${field('n-email', 'E-mail', '', { type: 'email', req: true })}
+                  ${LIVE ? '' : field('n-heslo', 'Dočasné heslo', '', { type: 'password', auto: 'new-password' })}
+                </div>
+                <p class="hint">${LIVE ? 'Účet nového správce nejdřív vytvořte nebo pozvěte v Supabase (Authentication → Users → Invite user). Pak ho zde přidejte mezi správce – uvidí poptávky, jakmile si nastaví heslo a dvoufázové ověření.'
+                  : 'Dočasné heslo (alespoň 12 znaků) předejte novému správci osobně; po prvním přihlášení si ho změní v této záložce.'}</p>
+                <button type="submit" class="btn btn-primary">${icon('plus', 17)} Přidat správce</button></form>
+            </section>`}
+          </div>`;
       };
       await render();
       box.addEventListener('click', async (e) => {
@@ -982,22 +1009,54 @@ export function viewAccount({ setup = false } = {}) {
         if (off && await confirmDialog('Vypnout dvoufázové ověření? Účet pak bude chráněn jen heslem.', 'Vypnout', true)) {
           try { await api.mfaRemove(off.dataset.id); toast('Dvoufázové ověření bylo vypnuto.'); await render(); } catch (err) { toast(errorMessage(err), 'err'); }
         }
+        const rm = e.target.closest('[data-remove-admin]');
+        if (rm && await confirmDialog(`Odebrat správce ${rm.dataset.removeAdmin}? Ztratí přístup do administrace.`, 'Odebrat', true)) {
+          try { await api.removeAdmin(rm.dataset.removeAdmin); toast('Správce byl odebrán.', 'ok'); await render(); } catch (err) { toast(errorMessage(err), 'err'); }
+        }
       });
       box.addEventListener('submit', async (e) => {
         e.preventDefault();
         const fm = e.target;
+        const btn = $('button[type="submit"]', fm);
+        const el = fm.elements;
         if (fm.dataset.form === 'mfa-activate') {
           try {
-            await api.mfaActivate(fm.dataset.factor, fm.elements.code.value.replace(/\s/g, ''));
+            await api.mfaActivate(fm.dataset.factor, el.code.value.replace(/\s/g, ''));
             toast('Dvoufázové ověření je zapnuté.', 'ok');
             if (setup) go('#/admin/poptavky'); else await render();
           } catch (err) { toast(errorMessage(err), 'err'); }
         }
+        if (fm.dataset.form === 'me') {
+          const email = el.email.value.trim();
+          if (!email) { toast('Zadejte e-mail, kterým se přihlašujete.', 'err'); el.email.focus(); return; }
+          await busy(btn, async () => {
+            try {
+              const r = await api.updateMe({ jmeno: el.jmeno.value, email, telefon: el.telefon.value });
+              toast(r?.emailPending ? 'Údaje jsou uložené. Novou e-mailovou adresu potvrďte odkazem, který vám přišel.' : 'Údaje jsou uložené.', 'ok');
+              go('#/admin/ucet'); // obnoví i e-mail v záhlaví administrace
+            } catch (err) { toast(errorMessage(err), 'err'); }
+          });
+        }
         if (fm.dataset.form === 'pw') {
-          const a = fm.elements.pw1.value;
-          if (a.length < 12) { toast('Heslo musí mít alespoň 12 znaků.', 'err'); return; }
-          if (a !== fm.elements.pw2.value) { toast('Hesla se neshodují.', 'err'); return; }
-          try { await api.changePassword(a); fm.reset(); ss.del('ph-recovery'); toast('Heslo bylo změněno.', 'ok'); } catch (err) { toast(errorMessage(err), 'err'); }
+          const a = el.pw1.value;
+          if (!LIVE && !el.pw0.value) { toast('Zadejte současné heslo.', 'err'); el.pw0.focus(); return; }
+          if (a.length < 12) { toast('Heslo musí mít alespoň 12 znaků.', 'err'); el.pw1.focus(); return; }
+          if (a !== el.pw2.value) { toast('Nová hesla se neshodují.', 'err'); el.pw2.focus(); return; }
+          await busy(btn, async () => {
+            try { await api.changePassword(a, LIVE ? undefined : el.pw0.value); fm.reset(); ss.del('ph-recovery'); toast('Heslo bylo změněno.', 'ok'); } catch (err) { toast(errorMessage(err), 'err'); }
+          });
+        }
+        if (fm.dataset.form === 'add-admin') {
+          const email = el['n-email'].value.trim();
+          if (!email) { toast('Zadejte e-mail nového správce.', 'err'); el['n-email'].focus(); return; }
+          if (!LIVE && el['n-heslo'].value.length < 12) { toast('Dočasné heslo musí mít alespoň 12 znaků.', 'err'); el['n-heslo'].focus(); return; }
+          await busy(btn, async () => {
+            try {
+              await api.addAdmin({ jmeno: LIVE ? '' : el['n-jmeno'].value, email, heslo: LIVE ? '' : el['n-heslo'].value });
+              toast(`Správce ${email} byl přidán.`, 'ok');
+              await render();
+            } catch (err) { toast(errorMessage(err), 'err'); }
+          });
         }
       });
     },

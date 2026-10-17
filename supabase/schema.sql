@@ -251,6 +251,77 @@ as $$
   );
 $$;
 
+-- Správa správců z administrace (jen přihlášený správce). Účet musí nejdřív existovat v Authentication → Users
+-- (vytvořit, nebo pozvat e-mailem); sám sebe ani posledního správce odebrat nelze.
+create or replace function public.spravci_seznam()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception using message = 'forbidden', errcode = 'P0001';
+  end if;
+  return coalesce((
+    select jsonb_agg(jsonb_build_object('email', u.email, 'jmeno', coalesce(u.raw_user_meta_data ->> 'jmeno', ''),
+                                        'vytvoreno', a.vytvoreno, 'ja', a.user_id = auth.uid()) order by a.vytvoreno)
+      from public.admins a join auth.users u on u.id = a.user_id), '[]'::jsonb);
+end;
+$$;
+
+create or replace function public.spravce_pridat(p_email text)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_id uuid;
+begin
+  if not public.is_admin() then
+    raise exception using message = 'forbidden', errcode = 'P0001';
+  end if;
+  select u.id into v_id from auth.users u where lower(u.email) = lower(btrim(p_email));
+  if v_id is null then
+    raise exception using message = 'ucet_neexistuje', errcode = 'P0001';
+  end if;
+  insert into public.admins (user_id, email) values (v_id, lower(btrim(p_email)))
+    on conflict (user_id) do nothing;
+end;
+$$;
+
+create or replace function public.spravce_odebrat(p_email text)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_id uuid;
+begin
+  if not public.is_admin() then
+    raise exception using message = 'forbidden', errcode = 'P0001';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('fsv-problem-hub:spravci')); -- dva správci se nesmí odebrat navzájem současně
+  select a.user_id into v_id from public.admins a join auth.users u on u.id = a.user_id
+   where lower(u.email) = lower(btrim(p_email));
+  if v_id is null then
+    return;
+  end if;
+  if v_id = auth.uid() then
+    raise exception using message = 'sam_sebe', errcode = 'P0001';
+  end if;
+  if (select count(*) from public.admins) <= 1 then
+    raise exception using message = 'posledni_spravce', errcode = 'P0001';
+  end if;
+  delete from public.admins where user_id = v_id;
+end;
+$$;
+
 create or replace function public.make_admin(p_email text)
 returns text
 language plpgsql
@@ -788,6 +859,12 @@ grant  execute on function public.upload_allowed(text)            to anon, authe
 grant  execute on function public.is_admin()                      to anon, authenticated;
 grant  execute on function public.admin_status()                  to authenticated;
 grant  execute on function public.admin_create_request(jsonb)     to authenticated;
+revoke execute on function public.spravci_seznam()                from public, anon;
+revoke execute on function public.spravce_pridat(text)            from public, anon;
+revoke execute on function public.spravce_odebrat(text)           from public, anon;
+grant  execute on function public.spravci_seznam()                to authenticated;
+grant  execute on function public.spravce_pridat(text)            to authenticated;
+grant  execute on function public.spravce_odebrat(text)           to authenticated;
 revoke all on public.poptavky_prehled from anon;
 grant  select on public.poptavky_prehled to authenticated;
 

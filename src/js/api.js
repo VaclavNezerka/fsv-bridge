@@ -74,6 +74,12 @@ export function errorMessage(e) {
     invalid_grant: 'Nesprávný e-mail nebo heslo.',
     mfa_verification_failed: 'Ověřovací kód nesouhlasí. Zkuste to znovu.',
     storage: 'Úložiště prohlížeče je plné. Smažte prosím starší ukázková data.',
+    email_obsazen: 'Správce s tímto e-mailem už existuje.',
+    spatne_heslo: 'Současné heslo nesouhlasí.',
+    slabe_heslo: 'Heslo musí mít alespoň 12 znaků.',
+    sam_sebe: 'Sami sebe odebrat nemůžete – požádejte jiného správce.',
+    posledni_spravce: 'Musí zůstat alespoň jeden správce.',
+    ucet_neexistuje: 'Účet s tímto e-mailem zatím neexistuje. Vytvořte ho v Supabase (Authentication → Users → Invite user) a pak ho přidejte zde.',
   };
   return map[code] || e?.message || 'Něco se nepovedlo. Zkuste to prosím znovu.';
 }
@@ -124,7 +130,28 @@ export const ANONYM = { jmeno: '[anonymizováno]', email: '', telefon: '', popis
 export const DOCS_DIR = 'interni';
 
 // ------------------------------------------------------------------ ukázkový režim
-const LS = { catalog: 'ph-demo-catalog', requests: 'ph-demo-requests', counter: 'ph-demo-counter', session: 'ph-demo-session', vzory: 'ph-demo-vzory' };
+const LS = { catalog: 'ph-demo-catalog', requests: 'ph-demo-requests', counter: 'ph-demo-counter', session: 'ph-demo-session', vzory: 'ph-demo-vzory',
+  admins: 'ph-demo-spravci' };
+// Správci v ukázkovém režimu: výchozí účet je v config.js (otisk hesla), další účty a změny jen v tomto prohlížeči.
+const ITERACE = 600000;
+const MIN_HESLO = 12;
+function demoAdmins() {
+  const saved = store.get(LS.admins);
+  if (Array.isArray(saved) && saved.length) return saved;
+  return [{ email: DEMO_ADMIN.email, jmeno: CONFIG.coordinator.name, telefon: '', salt: DEMO_ADMIN.salt,
+    iterations: DEMO_ADMIN.iterations, hash: DEMO_ADMIN.hash, vytvoreno: null, pridal: '' }];
+}
+function saveAdmins(list) { if (!store.set(LS.admins, list)) throw new ApiError('storage'); }
+async function hashHeslo(heslo) {
+  if (String(heslo || '').length < MIN_HESLO) throw new ApiError('slabe_heslo');
+  const salt = randomHex(16);
+  return { salt, iterations: ITERACE, hash: await pbkdf2hex(heslo, salt, ITERACE) };
+}
+const cleanEmail = (e) => {
+  const v = String(e || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(v)) throw new ApiError('invalid_email', 'Zadejte platný e-mail.');
+  return v;
+};
 const store = {
   get(k, d = null) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
@@ -247,14 +274,58 @@ const demo = {
   },
 
   session() {
-    try { const s = JSON.parse(ss.get(LS.session)); return s?.email === DEMO_ADMIN.email ? s : null; } catch { return null; }
+    try {
+      const s = JSON.parse(ss.get(LS.session));
+      return s && demoAdmins().some((a) => a.email === s.email) ? s : null;
+    } catch { return null; }
   },
   async signIn(email, password) {
-    const ok = String(email).trim().toLowerCase() === DEMO_ADMIN.email && DEMO_ADMIN.hash
-      && (await pbkdf2hex(password, DEMO_ADMIN.salt, DEMO_ADMIN.iterations)) === DEMO_ADMIN.hash;
+    const a = demoAdmins().find((x) => x.email === String(email).trim().toLowerCase());
+    const ok = a?.hash && (await pbkdf2hex(password, a.salt, a.iterations)) === a.hash;
     if (!ok) throw new ApiError('invalid_credentials');
-    ss.set(LS.session, JSON.stringify({ email: DEMO_ADMIN.email }));
+    ss.set(LS.session, JSON.stringify({ email: a.email }));
     return {};
+  },
+  async me() {
+    const a = demoAdmins().find((x) => x.email === this.session()?.email);
+    return a ? { email: a.email, jmeno: a.jmeno || '', telefon: a.telefon || '' } : null;
+  },
+  async updateMe({ jmeno, email, telefon }) {
+    const list = demoAdmins();
+    const me = list.find((x) => x.email === this.session()?.email);
+    if (!me) throw new ApiError('session', 'Přihlášení vypršelo. Přihlaste se prosím znovu.');
+    const e = cleanEmail(email || me.email);
+    if (e !== me.email && list.some((x) => x.email === e)) throw new ApiError('email_obsazen');
+    Object.assign(me, { jmeno: String(jmeno || '').trim(), telefon: String(telefon || '').trim(), email: e });
+    saveAdmins(list);
+    ss.set(LS.session, JSON.stringify({ email: e }));
+    return {};
+  },
+  async changePassword(heslo, soucasne) {
+    const list = demoAdmins();
+    const me = list.find((x) => x.email === this.session()?.email);
+    if (!me) throw new ApiError('session', 'Přihlášení vypršelo. Přihlaste se prosím znovu.');
+    if ((await pbkdf2hex(soucasne || '', me.salt, me.iterations)) !== me.hash) throw new ApiError('spatne_heslo');
+    Object.assign(me, await hashHeslo(heslo));
+    saveAdmins(list);
+  },
+  async listAdmins() {
+    const ja = this.session()?.email;
+    return demoAdmins().map((a) => ({ email: a.email, jmeno: a.jmeno || '', vytvoreno: a.vytvoreno, pridal: a.pridal || '', ja: a.email === ja }));
+  },
+  async addAdmin({ jmeno, email, heslo }) {
+    const list = demoAdmins();
+    const e = cleanEmail(email);
+    if (list.some((x) => x.email === e)) throw new ApiError('email_obsazen');
+    list.push({ email: e, jmeno: String(jmeno || '').trim(), telefon: '', ...(await hashHeslo(heslo)),
+      vytvoreno: new Date().toISOString(), pridal: this.session()?.email || '' });
+    saveAdmins(list);
+  },
+  async removeAdmin(email) {
+    const list = demoAdmins();
+    if (email === this.session()?.email) throw new ApiError('sam_sebe');
+    if (list.length <= 1) throw new ApiError('posledni_spravce');
+    saveAdmins(list.filter((x) => x.email !== email));
   },
   async verifyMfa() {},
   async signOut() { ss.del(LS.session); },
@@ -603,6 +674,23 @@ const live = {
     writeSession({ ...session, mfa: false });
   },
   changePassword(password) { return call('/auth/v1/user', { method: 'PUT', body: { password } }); },
+  async me() {
+    const u = await call('/auth/v1/user');
+    const m = u.user_metadata || {};
+    return { email: u.email, jmeno: m.jmeno || '', telefon: m.telefon || '' };
+  },
+  async updateMe({ jmeno, email, telefon }) {
+    await call('/auth/v1/user', { method: 'PUT', body: { data: { jmeno: String(jmeno || '').trim(), telefon: String(telefon || '').trim() } } });
+    const e = String(email || '').trim().toLowerCase();
+    if (e && e !== session?.user?.email) { // Supabase pošle potvrzovací odkaz; změna platí až po potvrzení
+      await call('/auth/v1/user', { method: 'PUT', body: { email: e } });
+      return { emailPending: true };
+    }
+    return {};
+  },
+  listAdmins() { return rpc('spravci_seznam'); },
+  addAdmin({ email }) { return rpc('spravce_pridat', { p_email: String(email || '').trim().toLowerCase() }); },
+  removeAdmin(email) { return rpc('spravce_odebrat', { p_email: email }); },
   aal() { return session ? jwtClaims(session.access_token).aal || 'aal1' : ''; },
 };
 

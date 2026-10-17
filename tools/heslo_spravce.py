@@ -8,8 +8,10 @@ Použití (z kořene projektu):
   python tools/heslo_spravce.py --email jmeno@cvut.cz    -> změní i přihlašovací e-mail
 Změnu pak nahrajte na web: git commit -am "Heslo správce" a git push.
 
-V ukázkovém režimu jsou poptávky a dokumenty uložené jen v prohlížeči správce, heslo je proto jen
-vstupní zábrana. Skutečné zabezpečení (účty, dvoufázové ověření) přinese databáze – viz SUPABASE.md.
+Jde o výchozí účet, který platí v každém prohlížeči. Změny hesla a další správci přidaní v administraci
+(záložka Účet) platí jen v prohlížeči, kde je provedete. V ukázkovém režimu jsou poptávky a dokumenty
+uložené jen v prohlížeči správce, heslo je proto jen vstupní zábrana. Skutečné zabezpečení (sdílené účty,
+dvoufázové ověření) přinese databáze – viz SUPABASE.md.
 """
 import argparse
 import getpass
