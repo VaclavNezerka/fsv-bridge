@@ -1,7 +1,6 @@
 // Konfigurace FSv Problem Hub.
-// Dokud nevyplníte údaje Supabase, běží aplikace v ukázkovém režimu: poptávky i úpravy
-// katalogu se ukládají jen v prohlížeči, správce se přihlašuje ukázkovým účtem.
-// Postup zprovoznění databáze: viz SUPABASE.md.
+// Dokud nevyplníte údaje Supabase, běží aplikace v ukázkovém režimu: poptávky, dokumenty
+// i úpravy katalogu se ukládají jen v prohlížeči. Postup zprovoznění databáze: viz SUPABASE.md.
 export const CONFIG = {
   // Supabase → Project Settings → API (adresa projektu a veřejný klíč „anon“/„publishable“)
   supabaseUrl: '',
@@ -23,5 +22,7 @@ export const CONFIG = {
 
 export const LIVE = Boolean(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey);
 
-// Ukázkový účet správce (jen ukázkový režim, nic nechrání – data jsou jen ve vašem prohlížeči)
-export const DEMO_ADMIN = { email: 'demo@fsv.cvut.cz', password: 'ukazka-spravce' };
+// Správce v ukázkovém režimu (bez databáze). Uložen je jen otisk hesla (PBKDF2), ne heslo.
+// Nové heslo nastavíte příkazem: python tools/heslo_spravce.py
+// Data jsou v tomto režimu jen v prohlížeči správce – skutečné zabezpečení přinese databáze (SUPABASE.md).
+export const DEMO_ADMIN = { email: 'vaclav.nezerka@cvut.cz', salt: '90283d69c1c6fd2c36deac1d80773d0d', iterations: 600000, hash: '4c91c29538f4939539996c9a7c87236d486ac6bca750798d972aa5f92ed4159a' };

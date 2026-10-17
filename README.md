@@ -3,7 +3,7 @@
 Webová aplikace, přes kterou firmy a instituce z praxe najdou odborníky Fakulty stavební ČVUT v Praze a zadají jim poptávku. Vzniká v rámci klíčové aktivity KA4 „FSv Problem Hub“ projektu PPSŘ 03.
 
 - **Pro zadavatele:** prohlédne si přehled expertízy pracovišť a realizované výzkumné projekty. Pak popíše, co potřebuje (poptávka se neváže na konkrétní téma), případně přiloží soubory a odešle. Nemusí se registrovat ani vyplňovat CAPTCHA a zpravidla do 10 pracovních dnů se mu ozve koordinátor.
-- **Pro koordinátora (správce):** jako jediný pracuje pod heslem a s dvoufázovým ověřením. Vidí poptávky, kontakty a přílohy, předává je pracovištím, eviduje výsledek (nabídka, smlouva, důvod nerealizace) a upravuje přehled expertízy a projektů.
+- **Pro koordinátora (správce):** jako jediný pracuje pod heslem a s dvoufázovým ověřením. Vidí poptávky a zakázky se stavem rozpracovanosti, kontakty a přílohy, předává je pracovištím, ke každé zakázce ukládá vlastní dokumenty, hodnotu, poznámky, zpětnou vazbu a kontakty pro další spolupráci a upravuje přehled expertízy a projektů.
 
 Návrh, ochrana proti robotům a právní kontrolní seznam jsou v [KONCEPT.md](KONCEPT.md), napojení na databázi v [SUPABASE.md](SUPABASE.md).
 
@@ -18,6 +18,7 @@ src/                         web: HTML, CSS a JavaScript bez knihoven a bez sest
   js/public.js               přehled expertízy, projekty, formulář poptávky, právní informace
   js/admin.js                administrace: poptávky, expertíza, reference, pracoviště, účet
   js/api.js                  datová vrstva (Supabase, nebo ukázkový režim v prohlížeči)
+  js/demo-vzory.js           tři vzorové zakázky pro ukázkový režim
   js/pow.js, pow-worker.js   neviditelná ochrana proti robotům
   data/expertiza.json        veřejný přehled expertízy a projektů (bez kontaktů pracovníků)
   img/exp/                   fotografie z podkladů pracovišť
@@ -27,6 +28,7 @@ supabase/seed.sql            katalog včetně interních kontaktů – jen loká
 tools/import_expertiza.py    převod podkladů pracovišť (DOCX, ZIP) do katalogu
 tools/foto-cache.json        mezipaměť převodu fotografií (zrychluje import)
 tools/serve.py               lokální náhled
+tools/heslo_spravce.py       heslo správce pro ukázkový režim (do kódu se uloží jen otisk)
 build.py                     sestavení pro GitHub Pages s bezpečnostními kontrolami
 .github/workflows/pages.yml  nasazení na GitHub Pages po každé změně a každou hodinu
 ```
@@ -39,7 +41,7 @@ Stačí Python 3. Spusťte z kořene projektu:
 python tools/serve.py
 ```
 
-Pak otevřete <http://127.0.0.1:8765/>. Bez napojení na databázi běží web v **ukázkovém režimu**: poptávky se ukládají jen v prohlížeči a do administrace se vstupuje ukázkovým účtem, který je uvedený na přihlašovací stránce.
+Pak otevřete <http://127.0.0.1:8765/>. Bez napojení na databázi běží web v **ukázkovém režimu**: poptávky, zakázky a jejich dokumenty se ukládají jen v prohlížeči. Do administrace se přihlašuje e-mail koordinátora s heslem, které nastavíte příkazem `python tools/heslo_spravce.py` (v kódu je uložen jen otisk hesla). Při prvním přihlášení se v administraci objeví tři vzorové zakázky – poptaná, běžící a dokončená.
 
 ## Zveřejnění na GitHub Pages
 
@@ -80,6 +82,7 @@ Po napojení na databázi se katalog upravuje v administraci a import slouží j
 ## Kde co upravit
 
 - **Kontakt koordinátora, lhůta odpovědi, pověřenec, datum prohlášení o přístupnosti, pruh „Testovací verze“:** `src/js/config.js`
+- **Heslo správce v ukázkovém režimu:** `python tools/heslo_spravce.py`, pak `git commit -am "Heslo správce"` a `git push`
 - **Právní informace** (zpracování osobních údajů, podmínky, přístupnost): objekt `DOCS` v `src/js/public.js`
 - **Barvy a písmo:** proměnné v `:root` v `src/css/app.css`
 - **Témata expertízy, projekty, pracoviště:** v administraci webu

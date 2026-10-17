@@ -1,6 +1,6 @@
 // Administrace (jen pro přihlášeného správce): poptávky, editace katalogu expertízy, účet.
 import { CONFIG, LIVE, DEMO_ADMIN } from './config.js';
-import { api, errorMessage, ANONYM } from './api.js';
+import { api, errorMessage, ANONYM, ALLOWED_EXT, DOCS_DIR, safeFileName } from './api.js';
 import { $, $$, esc, icon, toast, go, ss, openDialog, closeDialog, confirmDialog, fmtDate, fmtDateTime, fileSize, truncate, norm, debounce, downloadBlob, plural, safeUrl } from './util.js';
 import { setCatalog } from './public.js';
 
@@ -24,6 +24,10 @@ const SMLOUVY = { sod: 'Smlouva o dílo', smluvni_vyzkum: 'Smluvní výzkum', li
 const DUVODY = { cena: 'Cena', termin: 'Termín', kapacita: 'Kapacita pracoviště', mimo_zamereni: 'Mimo zaměření fakulty',
   bez_reakce: 'Zadavatel nereagoval', jiny_dodavatel: 'Zadavatel zvolil jiného dodavatele', jine: 'Jiný důvod' };
 const ROLE = { dodavatel: 'Fakulta jako dodavatel', poradce: 'Fakulta jako poradce zadavatele', jine: 'Jiná' };
+const SPOKOJENOST = [['5', 'velmi spokojen'], ['4', 'spokojen'], ['3', 'částečně spokojen'], ['2', 'spíše nespokojen'], ['1', 'nespokojen']];
+// Stav rozpracovanosti – kroky cesty od poptávky k dokončené zakázce
+const KROKY = [['nova', 'Poptávka'], ['resi_se', 'Posouzení'], ['predano', 'Předáno pracovišti'], ['nabidka', 'Nabídka'], ['realizace', 'Realizace'], ['dokonceno', 'Dokončeno']];
+const kc = (n) => `${new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 }).format(n)} Kč`;
 const options = (map, val, empty = '—') => `<option value="">${esc(empty)}</option>`
   + Object.entries(map).map(([k, v]) => `<option value="${k}"${k === val ? ' selected' : ''}>${esc(v)}</option>`).join('');
 // Lhůta se měří k první odpovědi zadavateli, ne ke změně stavu.
@@ -74,7 +78,7 @@ function failBox(e) {
 }
 
 function shell(active, inner, { limited = false } = {}) {
-  const all = [['poptavky', 'Poptávky', 'inbox'], ['nabidky', 'Expertíza', 'list'], ['reference', 'Reference', 'folder'], ['pracoviste', 'Pracoviště', 'building'], ['ucet', 'Účet', 'user']];
+  const all = [['poptavky', 'Poptávky a zakázky', 'inbox'], ['nabidky', 'Expertíza', 'list'], ['reference', 'Reference', 'folder'], ['pracoviste', 'Pracoviště', 'building'], ['ucet', 'Účet', 'user']];
   const tabs = limited ? all.filter(([id]) => id === 'ucet') : all; // bez 2FA jen nastavení účtu
   const label = all.find(([id]) => id === active)?.[1] || '';
   return `<div class="wrap page admin">
@@ -82,7 +86,7 @@ function shell(active, inner, { limited = false } = {}) {
     <div class="admin-head"><p class="eyebrow">Administrace FSv Problem Hub</p>
       <div class="admin-user">${icon('user', 18)}<span>${esc(api.session()?.email || '')}</span>
         <button type="button" class="btn btn-secondary btn-sm" data-admin="logout">${icon('logout', 17)} Odhlásit</button></div></div>
-    ${LIVE ? '' : `<div class="note note-warn">${icon('info', 20)}<p><strong>Ukázkový režim:</strong> poptávky i změny katalogu se ukládají jen v tomto prohlížeči. <button type="button" class="linklike" data-admin="reset-demo">Obnovit výchozí data</button></p></div>`}
+    ${LIVE ? '' : `<div class="note note-warn">${icon('info', 20)}<p><strong>Ukázkový režim bez databáze:</strong> zakázky, dokumenty i změny katalogu se ukládají jen v tomto prohlížeči (jiné zařízení je neuvidí). <button type="button" class="linklike" data-admin="reset-demo">Obnovit výchozí data</button></p></div>`}
     ${LIVE && api.session() && !api.session().mfa && active !== 'ucet' ? `<div class="note note-warn">${icon('shield', 20)}<p><strong>Zapněte si dvoufázové ověření.</strong> Bez něj chrání kontakty a přílohy zadavatelů jen heslo. <a href="#/admin/ucet">Nastavit v záložce Účet</a></p></div>` : ''}
     <nav class="tabs" aria-label="Části administrace">${tabs.map(([id, l, ic]) => `<a href="#/admin/${id}"${id === active ? ' aria-current="page"' : ''}>${icon(ic, 18)}<span>${l}</span></a>`).join('')}</nav>
     <div class="admin-body">${inner}</div>
@@ -98,7 +102,7 @@ export async function adminAction(name) {
     toast('Byli jste odhlášeni.');
     go('#/');
   }
-  if (name === 'reset-demo' && await confirmDialog('Obnovit výchozí ukázková data? Smažou se ukázkové poptávky i změny katalogu v tomto prohlížeči.', 'Obnovit', true)) {
+  if (name === 'reset-demo' && await confirmDialog('Obnovit výchozí data? V tomto prohlížeči se smažou všechny poptávky, zakázky a jejich dokumenty i změny katalogu a vrátí se tři vzorové zakázky.', 'Obnovit', true)) {
     await api.resetDemo();
     location.reload();
   }
@@ -112,7 +116,7 @@ export function viewLogin(returnTo = '#/admin/poptavky') {
       <span class="login-icon">${icon('lock', 30)}</span>
       <h1>Přihlášení správce</h1>
       <p class="muted">Administrace FSv Problem Hub je přístupná jen koordinátorovi.</p>
-      ${LIVE ? '' : `<div class="note">${icon('info', 20)}<p>Ukázkový režim – přihlaste se ukázkovým účtem <code>${esc(DEMO_ADMIN.email)}</code> s heslem <code>${esc(DEMO_ADMIN.password)}</code>.</p></div>`}
+      ${LIVE ? '' : `<div class="note">${icon('info', 20)}<p>Ukázkový režim bez databáze – zakázky a dokumenty se ukládají jen v prohlížeči, ve kterém se přihlásíte.</p></div>`}
       <form data-form="login" novalidate>
         <div class="field"><label for="l-email">E-mail</label><input id="l-email" name="email" type="email" autocomplete="username" required></div>
         <div class="field"><label for="l-pw">Heslo</label><div class="pwrow"><input id="l-pw" name="password" type="password" autocomplete="current-password" required>
@@ -193,13 +197,13 @@ export function viewLogin(returnTo = '#/admin/poptavky') {
 // ------------------------------------------------------------------ poptávky
 export function viewRequests() {
   return {
-    title: 'Poptávky',
-    html: shell('poptavky', `<div id="req">${loading('Načítám poptávky…')}</div>`),
+    title: 'Poptávky a zakázky',
+    html: shell('poptavky', `<div id="req">${loading('Načítám poptávky a zakázky…')}</div>`),
     async mount(root) {
       const box = $('#req', root);
       let list;
       try { list = await api.requests(); } catch (e) { box.innerHTML = failBox(e); return; }
-      const f = { stav: '', q: '', zobrazit: '' }; // zobrazit: '' | 'lhuta' | 'skartace'
+      const f = { stav: '', q: '', zobrazit: '' }; // zobrazit: '' | 'lhuta' | 'skartace' | 'spoluprace'
       box.innerHTML = `<div id="rq-stats"></div>
         <div class="admin-toolbar">
           <div class="searchbox">${icon('search', 18)}<label class="sr-only" for="rq-q">Hledat v poptávkách</label><input id="rq-q" type="search" placeholder="Hledat jméno, organizaci, text…"></div>
@@ -217,15 +221,19 @@ export function viewRequests() {
         const late = real.filter(poLhute).length;
         const kpi = list.filter((r) => KVALIFIKOVANE.includes(r.stav) && r.typ_zadavatele !== 'soukroma');
         const skart = list.filter(keSkartaci).length;
+        const objem = list.filter((r) => ['realizace', 'dokonceno'].includes(r.stav)).reduce((sum, r) => sum + (Number(r.hodnota) || 0), 0);
+        const spol = list.filter((r) => r.spoluprace && !anonymni(r)).length;
         $('#rq-stats', box).innerHTML = `<div class="metrics">
           <div class="metric metric-new"><span class="val">${count('nova')}</span><span class="lbl">Nové</span></div>
           <div class="metric"><span class="val">${count('resi_se', 'predano', 'nabidka')}</span><span class="lbl">V jednání</span></div>
           <div class="metric"><span class="val">${won}</span><span class="lbl">Vedlo k zakázce${decided ? ` · úspěšnost ${Math.round((won / decided) * 100)} %` : ''}</span></div>
           <div class="metric"><span class="val">${count('nerealizovano')}</span><span class="lbl">Nerealizováno</span></div>
+          <div class="metric"><span class="val val-sm">${esc(kc(objem))}</span><span class="lbl">Objem zakázek (bez DPH)</span></div>
           <div class="metric"><span class="val">${real.length}</span><span class="lbl">Celkem${count('spam') ? ` · <button type="button" class="linklike" data-show="spam">${count('spam')} ve spamu</button>` : ''}</span></div>
         </div>
         ${late ? `<p class="note note-warn">${icon('clock', 20)}<span><strong>${plural(late, 'poptávka čeká', 'poptávky čekají', 'poptávek čeká')} na první odpověď déle než ${CONFIG.responseDays} pracovních dnů.</strong> <button type="button" class="linklike" data-show="lhuta">Zobrazit</button></span></p>` : ''}
-        <p class="kpi ${kpi.length ? 'ok' : 'no'}">${icon(kpi.length ? 'check' : 'info', 20)} <span><strong>KPI 4 (PPSŘ 03):</strong> kvalifikovaná průmyslová zadání (předaná pracovišti nebo dál, ne od soukromých osob): ${kpi.length}, z toho aktivních ${kpi.filter((r) => r.stav !== 'dokonceno').length}. ${kpi.length ? 'Ukazatel je splněn.' : 'Zatím bez kvalifikovaného zadání.'}</span></p>
+        <p class="kpi ${kpi.length ? 'ok' : 'no'}">${icon(kpi.length ? 'check' : 'info', 20)} <span><strong>KPI 4 (PPSŘ 03):</strong> kvalifikovaná průmyslová zadání (předaná pracovišti nebo dál, ne od soukromých osob): ${kpi.length}, z toho aktivních ${kpi.filter((r) => r.stav !== 'dokonceno').length}. ${kpi.length ? 'Ukazatel je splněn.' : 'Zatím bez kvalifikovaného zadání.'}${kpi.some((r) => r.vzor) ? ' (Včetně vzorových zakázek – před vykazováním je smažte.)' : ''}</span></p>
+        ${spol ? `<p class="note">${icon('users', 20)}<span>${plural(spol, 'zadavatel má', 'zadavatelé mají', 'zadavatelů má')} zájem o další spolupráci. <button type="button" class="linklike" data-show="spoluprace">Zobrazit kontakty</button></span></p>` : ''}
         ${skart ? `<p class="note">${icon('info', 20)}<span>${plural(skart, 'poptávka překročila', 'poptávky překročily', 'poptávek překročilo')} dobu uchování. <button type="button" class="linklike" data-show="skartace">Zobrazit ke skartaci</button></span></p>` : ''}`;
       };
       const render = () => {
@@ -233,20 +241,21 @@ export function viewRequests() {
         const rows = list.filter((r) => {
           if (f.zobrazit === 'lhuta') return poLhute(r);
           if (f.zobrazit === 'skartace') return keSkartaci(r);
+          if (f.zobrazit === 'spoluprace') return r.spoluprace && !anonymni(r);
           if (f.stav ? r.stav !== f.stav : r.stav === 'spam') return false;
           return !q || norm([r.cislo, r.jmeno, r.organizace, r.email, r.popis].join(' ')).includes(q);
         });
-        $('#rq-flags', box).innerHTML = f.zobrazit ? `<p class="filter-flag">${icon('info', 18)} ${f.zobrazit === 'lhuta' ? 'Poptávky bez první odpovědi po lhůtě.' : 'Poptávky po době uchování – anonymizujte je, spam smažte.'} <button type="button" class="linklike" data-show="">Zobrazit vše</button></p>` : '';
+        $('#rq-flags', box).innerHTML = f.zobrazit ? `<p class="filter-flag">${icon('info', 18)} ${{ lhuta: 'Poptávky bez první odpovědi po lhůtě.', skartace: 'Poptávky po době uchování – anonymizujte je, spam smažte.', spoluprace: 'Zadavatelé se zájmem o další spolupráci – kontakty najdete v detailu zakázky.' }[f.zobrazit]} <button type="button" class="linklike" data-show="">Zobrazit vše</button></p>` : '';
         $('#rq-list', box).innerHTML = rows.length ? `<div class="table-wrap"><table class="data">
-          <caption class="sr-only">Seznam poptávek</caption>
-          <thead><tr><th scope="col">Číslo</th><th scope="col">Přijato</th><th scope="col">Zadavatel</th><th scope="col">Poptávka</th><th scope="col">Přílohy</th><th scope="col">Stav</th></tr></thead>
+          <caption class="sr-only">Seznam poptávek a zakázek</caption>
+          <thead><tr><th scope="col">Číslo</th><th scope="col">Přijato</th><th scope="col">Zadavatel</th><th scope="col">Poptávka</th><th scope="col">Soubory</th><th scope="col">Stav</th></tr></thead>
           <tbody>${rows.map((r) => `<tr class="${r.stav === 'nova' ? 'is-new' : ''}">
-            <td><button type="button" class="linklike strong" data-open="${esc(r.id)}">${esc(r.cislo)}</button>${r.zdroj && r.zdroj !== 'formular' ? `<span class="wait">${esc(ZDROJ[r.zdroj] || r.zdroj)}</span>` : ''}</td>
+            <td><button type="button" class="linklike strong" data-open="${esc(r.id)}">${esc(r.cislo)}</button>${r.vzor ? '<span class="wait">vzorová zakázka</span>' : ''}${r.zdroj && r.zdroj !== 'formular' ? `<span class="wait">${esc(ZDROJ[r.zdroj] || r.zdroj)}</span>` : ''}</td>
             <td>${esc(fmtDateTime(r.vytvoreno))}${cekaNaOdpoved(r) ? waitLabel(r) : ''}</td>
             <td><strong>${esc(r.jmeno)}</strong>${r.organizace ? `<br><span class="muted small">${esc(r.organizace)}</span>` : ''}${r.typ_zadavatele ? `<span class="wait">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}</td>
             <td>${esc(truncate(r.popis, 110))}${r.nda ? ` <span class="badge tone-progress">NDA</span>` : ''}</td>
             <td>${r.pocet_priloh ? `${icon('clip', 16)} ${r.pocet_priloh}` : '<span class="muted">–</span>'}</td>
-            <td>${badge(r.stav)}</td></tr>`).join('')}</tbody></table></div>`
+            <td>${badge(r.stav)}${r.hodnota ? `<span class="wait">${esc(kc(r.hodnota))}</span>` : ''}${r.spoluprace ? '<span class="wait">zájem o další spolupráci</span>' : ''}</td></tr>`).join('')}</tbody></table></div>`
           : `<div class="empty"><p>${list.length ? 'Žádná poptávka neodpovídá filtru.' : 'Zatím nepřišla žádná poptávka.'}</p>${list.length ? '' : '<p><a href="#/poptavka">Vyzkoušet formulář poptávky</a></p>'}</div>`;
       };
       const reload = async () => { list = await api.requests(); stats(); render(); };
@@ -274,13 +283,16 @@ function exportCsv(list) {
     ['jmeno', 'Jméno'], ['organizace', 'Organizace'], ['email', 'E-mail'], ['telefon', 'Telefon'],
     ['nda', 'NDA'], ['pracoviste', 'Předáno pracovišti'], ['predano_kdy', 'Předáno dne'], ['prvni_odpoved', 'První odpověď'],
     ['garant', 'Garant'], ['role_fakulty', 'Role fakulty'], ['hodnota', 'Hodnota (Kč bez DPH)'], ['typ_smlouvy', 'Typ smlouvy'],
-    ['cislo_smlouvy', 'Číslo smlouvy'], ['duvod', 'Důvod nerealizace'], ['pocet_priloh', 'Přílohy'], ['popis', 'Poptávka'], ['poznamka', 'Interní poznámka']];
+    ['cislo_smlouvy', 'Číslo smlouvy'], ['duvod', 'Důvod nerealizace'], ['spokojenost', 'Spokojenost (1–5)'], ['zpetna_vazba', 'Zpětná vazba'],
+    ['spoluprace', 'Zájem o další spolupráci'], ['kontakty_spoluprace', 'Kontakty pro další spolupráci'],
+    ['pocet_priloh', 'Soubory'], ['popis', 'Poptávka'], ['poznamka', 'Interní poznámky']];
   const maps = { stav: Object.fromEntries(Object.entries(STAVY).map(([k, v]) => [k, v.label])), typ_zadavatele: TYP_ZAD, zdroj: ZDROJ,
     typ_smlouvy: SMLOUVY, duvod: DUVODY, role_fakulty: ROLE };
   const val = (r, k) => {
     if (maps[k]) return maps[k][r[k]] || r[k] || '';
-    if (['vytvoreno', 'predano_kdy', 'prvni_odpoved'].includes(k)) return fmtDateTime(r[k]);
-    if (k === 'nda') return r.nda ? 'ano' : '';
+    if (['vytvoreno', 'predano_kdy'].includes(k)) return fmtDateTime(r[k]);
+    if (k === 'prvni_odpoved') return fmtDate(r[k]);
+    if (k === 'nda' || k === 'spoluprace') return r[k] ? 'ano' : '';
     return r[k] ?? '';
   };
   // hodnoty od zadavatelů nesmí Excel spustit jako vzorec (=, +, -, @) – apostrof je skryje
@@ -333,11 +345,32 @@ function requestMails(r, deptName) {
 
 /** Další poptávky téže organizace nebo e-mailové domény (vztah se zadavatelem, kontrola střetu zájmů). */
 function related(r, list) {
-  const FREE = /^(gmail|googlemail|seznam|email|centrum|outlook|hotmail|live|icloud|me|post|volny|atlas|quick|tiscali|gmx|yahoo|aol|proton(mail)?)\./i;
+  const FREE = /^(gmail|googlemail|seznam|email|centrum|outlook|hotmail|live|icloud|me|post|volny|atlas|quick|tiscali|gmx|yahoo|aol|proton(mail)?|example)\./i;
   const org = norm(r.organizace).trim();
   const dom = (r.email.split('@')[1] || '').toLowerCase();
   return list.filter((x) => x.id !== r.id && x.stav !== 'spam'
     && ((org && norm(x.organizace).trim() === org) || (dom && !FREE.test(dom) && (x.email.split('@')[1] || '').toLowerCase() === dom)));
+}
+
+/** Stav rozpracovanosti jako řada kroků od poptávky k dokončené zakázce. */
+function stepper(stav, duvod) {
+  if (stav === 'spam') return '';
+  if (stav === 'nerealizovano') {
+    return `<p class="note">${icon('info', 20)}<span><strong>Nerealizováno</strong>${duvod ? ` – ${esc(DUVODY[duvod] || duvod)}` : ''}</span></p>`;
+  }
+  const i = KROKY.findIndex(([k]) => k === stav);
+  return `<ol class="kroky" aria-label="Stav rozpracovanosti">${KROKY.map(([, l], j) => `<li class="${j < i ? 'done' : j === i ? 'current' : ''}"${j === i ? ' aria-current="step"' : ''}>${esc(l)}${j < i ? '<span class="sr-only"> (hotovo)</span>' : ''}</li>`).join('')}</ol>`;
+}
+
+/** Název nahraného dokumentu: datum, bezpečné znaky, bez kolize s existujícími soubory. */
+function docName(name, taken) {
+  const n = safeFileName(name, 0).replace(/^1-/, `${new Date().toISOString().slice(0, 10)}-`);
+  const dot = n.lastIndexOf('.');
+  const base = dot > 0 ? n.slice(0, dot) : n;
+  const ext = dot > 0 ? n.slice(dot) : '';
+  let out = n;
+  for (let i = 2; taken.includes(out); i++) out = `${base}-${i}${ext}`;
+  return out;
 }
 
 async function openRequest(r, returnTo, onChange, list = []) {
@@ -351,11 +384,13 @@ async function openRequest(r, returnTo, onChange, list = []) {
   let mails = requestMails(r, deptName(r.pracoviste));
   const rel = related(r, list);
   const evidenceOpen = ['nabidka', 'realizace', 'dokonceno', 'nerealizovano'].includes(r.stav);
+  const spolOpen = ['realizace', 'dokonceno'].includes(r.stav) || r.spokojenost || r.zpetna_vazba || r.spoluprace || r.kontakty_spoluprace;
   const dateVal = (iso) => (iso ? new Date(iso).toISOString().slice(0, 10) : '');
   openDialog(`<div class="req-detail">
-    <p class="eyebrow">Poptávka ${esc(r.cislo)} · ${esc(fmtDateTime(r.vytvoreno))} · ${esc(ZDROJ[r.zdroj] || 'formulář')}</p>
+    <p class="eyebrow">${r.vzor ? 'Vzorová zakázka' : 'Poptávka'} ${esc(r.cislo)} · ${esc(fmtDateTime(r.vytvoreno))} · ${esc(ZDROJ[r.zdroj] || 'formulář')}</p>
     <h2 id="dlg-title">${esc(r.jmeno)}${r.organizace ? ` <span class="muted">(${esc(r.organizace)})</span>` : ''}</h2>
-    <p class="badge-row">${badge(r.stav)}${r.typ_zadavatele ? ` <span class="badge tone-info">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.nda ? ' <span class="badge tone-progress">Požaduje NDA – přílohy předat až po jejím uzavření</span>' : ''}</p>
+    <p class="badge-row">${badge(r.stav)}${r.typ_zadavatele ? ` <span class="badge tone-info">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.nda ? ' <span class="badge tone-progress">Požaduje NDA – přílohy předat až po jejím uzavření</span>' : ''}${r.hodnota ? ` <span class="badge tone-real">${esc(kc(r.hodnota))} bez DPH</span>` : ''}</p>
+    ${stepper(r.stav, r.duvod)}
     <div class="req-text">${esc(r.popis).replace(/\n/g, '<br>')}</div>
     <div class="req-cols">
       <section><h3>Kontakt</h3><ul class="contact">
@@ -363,8 +398,15 @@ async function openRequest(r, returnTo, onChange, list = []) {
         ${r.telefon ? `<li>${icon('phone', 18)} <a href="tel:${esc(r.telefon.replace(/[^\d+]/g, ''))}">${esc(r.telefon)}</a></li>` : ''}
         ${r.organizace ? `<li>${icon('building', 18)} ${esc(r.organizace)}</li>` : ''}</ul>
         ${rel.length ? `<p class="small">${icon('users', 16)} Další poptávky téže organizace: ${rel.map((x) => `<strong>${esc(x.cislo)}</strong> (${esc(STAVY[x.stav]?.label || x.stav)})`).join(', ')}</p>` : ''}</section>
-      <section><h3>Přílohy</h3><div id="att">${loading()}</div></section>
+      <section><h3>Přílohy od zadavatele</h3><div id="att">${loading()}</div></section>
     </div>
+    <section class="docs">
+      <div class="docs-head"><h3>Dokumenty zakázky <span class="opt">(interní, vidí jen správce)</span></h3>
+        <button type="button" class="btn btn-secondary btn-sm" data-act="add-doc">${icon('upload', 16)} Přidat dokument</button>
+        <input type="file" id="doc-file" multiple hidden accept="${ALLOWED_EXT.map((e) => '.' + e).join(',')}"></div>
+      <div id="docs">${loading()}</div>
+      <p class="small muted">Nabídka, smlouva, dohoda o mlčenlivosti, protokoly, korespondence… PDF, Office (.docx, .xlsx, .pptx), obrázky, DWG/DXF/IFC nebo TXT/CSV, nejvýše ${CONFIG.maxFileMB} MB.</p>
+    </section>
     <div class="req-actions">
       ${r.email ? `<a class="btn btn-secondary btn-sm" href="${esc(mails.reply)}" data-act="reply" data-mail="reply">${icon('mail', 16)} Odpovědět zadavateli</a>
       <a class="btn btn-secondary btn-sm" href="${esc(mails.decline)}" data-act="reply" data-mail="decline">${icon('close', 16)} Zdvořile odmítnout</a>` : ''}
@@ -379,7 +421,8 @@ async function openRequest(r, returnTo, onChange, list = []) {
         <div class="field"><label for="r-garant">Garant na pracovišti</label><input id="r-garant" name="garant" value="${esc(r.garant || '')}" placeholder="jméno"></div>
         <div class="field"><label for="r-typ">Typ zadavatele</label><select id="r-typ" name="typ_zadavatele">${options(TYP_ZAD, r.typ_zadavatele)}</select></div>
       </div>
-      <div class="field"><label for="r-note">Interní poznámka <span class="opt">(zadavatel ji nevidí)</span></label><textarea id="r-note" name="poznamka" rows="3">${esc(r.poznamka || '')}</textarea></div>
+      <div class="field"><label for="r-note">Interní poznámky <span class="opt">(zadavatel je nevidí)</span></label><textarea id="r-note" name="poznamka" rows="4">${esc(r.poznamka || '')}</textarea>
+        <button type="button" class="btn-link small" data-act="note-date">${icon('clock', 15)} Vložit dnešní datum</button></div>
       <details class="evidence"${evidenceOpen ? ' open' : ''}><summary>Evidence zakázky (pro vykazování)</summary>
         <div class="grid-2">
           <div class="field"><label for="r-odp">První odpověď zadavateli</label><input id="r-odp" name="prvni_odpoved" type="date" value="${esc(dateVal(r.prvni_odpoved))}"></div>
@@ -391,6 +434,16 @@ async function openRequest(r, returnTo, onChange, list = []) {
         </div>
         ${r.predano_kdy ? `<p class="small muted">Předáno pracovišti ${esc(fmtDateTime(r.predano_kdy))}.</p>` : ''}
       </details>
+      <details class="evidence"${spolOpen ? ' open' : ''}><summary>Zpětná vazba a další spolupráce</summary>
+        <div class="grid-2">
+          <div class="field"><label for="r-spok">Spokojenost zadavatele</label><select id="r-spok" name="spokojenost"><option value="">neuvedeno</option>${SPOKOJENOST.map(([v, l]) => `<option value="${v}"${String(r.spokojenost ?? '') === v ? ' selected' : ''}>${v} – ${esc(l)}</option>`).join('')}</select></div>
+          <div class="field field-check"><label class="check-inline"><input type="checkbox" name="spoluprace"${r.spoluprace ? ' checked' : ''}> Zadavatel má zájem o další spolupráci</label></div>
+        </div>
+        <div class="field"><label for="r-zv">Zpětná vazba zadavatele</label><textarea id="r-zv" name="zpetna_vazba" rows="2">${esc(r.zpetna_vazba || '')}</textarea></div>
+        <div class="field"><label for="r-ks">Kontakty a příležitosti pro další spolupráci</label>
+          <p class="hint" id="h-ks">Další kontaktní osoby, navazující zakázky, společné projekty, stáže studentů…</p>
+          <textarea id="r-ks" name="kontakty_spoluprace" rows="3" aria-describedby="h-ks">${esc(r.kontakty_spoluprace || '')}</textarea></div>
+      </details>
       <div id="hist" class="history"></div>
       <div class="actions"><button type="submit" class="btn btn-primary">Uložit</button>
         ${!anonymni(r) && r.stav !== 'spam' ? `<button type="button" class="btn btn-secondary" data-act="anonymize">${icon('user', 17)} Anonymizovat</button>` : ''}
@@ -400,10 +453,55 @@ async function openRequest(r, returnTo, onChange, list = []) {
   const root = $('#dlg .req-detail');
   const att = $('#att', root);
   const fm = $('form[data-form="req-edit"]', root);
+  const docsDir = `${r.prilohy_slozka}/${DOCS_DIR}`;
+  let docNames = [];
+  const renderDocs = async () => {
+    const box = $('#docs', root);
+    try {
+      const docs = await api.documents(r.prilohy_slozka);
+      docNames = docs.map((d) => d.name);
+      if (!box?.isConnected) return;
+      box.innerHTML = docs.length ? `<ul class="filelist">${docs.map((f) => `<li>${icon('doc', 20)}<span class="fname">${esc(f.name)}</span><span class="fsize">${fileSize(f.size)}</span>
+        <button type="button" class="btn btn-secondary btn-sm" data-getdoc="${esc(f.name)}">${icon('download', 16)} Stáhnout</button>
+        <button type="button" class="icon-btn danger" data-deldoc="${esc(f.name)}" aria-label="Smazat dokument ${esc(f.name)}">${icon('trash', 17)}</button></li>`).join('')}</ul>`
+        : '<p class="muted">Zatím žádné dokumenty.</p>';
+    } catch (e) { if (box?.isConnected) box.innerHTML = failBox(e); }
+  };
+  const download = async (folder, name) => {
+    try {
+      const url = await api.attachmentUrl(folder, name);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.rel = 'noopener';
+      document.body.append(a);
+      a.click();
+      a.remove();
+    } catch (err) { toast(errorMessage(err), 'err'); }
+  };
   fm.elements.pracoviste.addEventListener('change', () => {
     mails = requestMails(r, deptName(fm.elements.pracoviste.value)); // šablony podle právě vybraného pracoviště
     $('#handover', root).href = mails.handover(garanti(fm.elements.pracoviste.value));
     $$('[data-mail]', root).forEach((a) => { a.href = mails[a.dataset.mail]; });
+  });
+  $('#doc-file', root).addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    for (const file of files) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (!ALLOWED_EXT.includes(ext)) { toast(`Soubor „${file.name}“ má nepodporovaný formát.`, 'err'); continue; }
+      if (file.size > CONFIG.maxFileMB * 1048576) { toast(`Soubor „${file.name}“ je větší než ${CONFIG.maxFileMB} MB.`, 'err'); continue; }
+      if (!file.size) { toast(`Soubor „${file.name}“ je prázdný.`, 'err'); continue; }
+      const name = docName(file.name, docNames);
+      try {
+        toast(`Nahrávám ${file.name}…`);
+        await api.uploadDoc(r.prilohy_slozka, file, name);
+        docNames.push(name);
+        toast(`Dokument ${name} byl přidán.`, 'ok');
+      } catch (err) { toast(`Dokument ${file.name} se nepodařilo nahrát: ${errorMessage(err)}`, 'err'); }
+    }
+    await renderDocs();
+    onChange(); // počet souborů v přehledu
   });
   const onClick = async (e) => {
     if (e.target.closest('[data-act="reply"]') && !r.prvni_odpoved) {
@@ -420,27 +518,35 @@ async function openRequest(r, returnTo, onChange, list = []) {
     if (e.target.closest('[data-act="copy-summary"]')) {
       try { await navigator.clipboard.writeText(mails.summary); toast('Souhrn poptávky je ve schránce.', 'ok'); } catch { toast('Kopírování se nepodařilo.', 'err'); }
     }
+    if (e.target.closest('[data-act="note-date"]')) {
+      const t = fm.elements.poznamka;
+      const stamp = `${fmtDate(new Date().toISOString())}: `;
+      t.value = t.value.trim() ? `${t.value.replace(/\s+$/, '')}\n${stamp}` : stamp;
+      t.focus();
+      t.setSelectionRange(t.value.length, t.value.length);
+    }
+    if (e.target.closest('[data-act="add-doc"]')) $('#doc-file', root).click();
     const fb = e.target.closest('[data-file]');
-    if (fb) {
+    if (fb) await download(r.prilohy_slozka, fb.dataset.file);
+    const gd = e.target.closest('[data-getdoc]');
+    if (gd) await download(docsDir, gd.dataset.getdoc);
+    const dd = e.target.closest('[data-deldoc]');
+    if (dd && await confirmDialog(`Smazat dokument „${dd.dataset.deldoc}“? Tuto akci nelze vrátit.`, 'Smazat', true)) {
       try {
-        const url = await api.attachmentUrl(r.prilohy_slozka, fb.dataset.file);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fb.dataset.file;
-        a.rel = 'noopener';
-        document.body.append(a);
-        a.click();
-        a.remove();
+        await api.deleteDoc(r.prilohy_slozka, dd.dataset.deldoc);
+        toast('Dokument byl smazán.', 'ok');
+        await renderDocs();
+        onChange();
       } catch (err) { toast(errorMessage(err), 'err'); }
     }
     if (e.target.closest('[data-act="anonymize"]')) {
-      if (await confirmDialog(`Anonymizovat poptávku ${r.cislo}? Smaže se jméno, kontakty, text a přílohy; zůstane číslo, data, stav, organizace a hodnota pro statistiku.`, 'Anonymizovat', true)) {
+      if (await confirmDialog(`Anonymizovat poptávku ${r.cislo}? Smaže se jméno, kontakty, text, přílohy i dokumenty, zpětná vazba a kontakty pro další spolupráci. Zůstane číslo, data, stav, organizace, hodnota a hodnocení spokojenosti pro statistiku.`, 'Anonymizovat', true)) {
         try { await api.anonymize(r); closeDialog(); toast('Poptávka byla anonymizována.', 'ok'); await onChange(); } catch (err) { toast(errorMessage(err), 'err'); }
       }
     }
     if (e.target.closest('[data-act="delete"]')) {
       const warn = r.stav === 'spam' ? '' : ' Smazáním zmizí i doklad pro vykazování KPI – u skutečných poptávek zvažte raději anonymizaci.';
-      if (await confirmDialog(`Smazat poptávku ${r.cislo} včetně příloh? Tuto akci nelze vrátit.${warn}`, 'Smazat', true)) {
+      if (await confirmDialog(`Smazat poptávku ${r.cislo} včetně příloh a dokumentů? Tuto akci nelze vrátit.${warn}`, 'Smazat', true)) {
         try { await api.deleteRequest(r); closeDialog(); toast('Poptávka byla smazána.', 'ok'); await onChange(); } catch (err) { toast(errorMessage(err), 'err'); }
       }
     }
@@ -455,10 +561,12 @@ async function openRequest(r, returnTo, onChange, list = []) {
       typ_zadavatele: el.typ_zadavatele.value, prvni_odpoved: el.prvni_odpoved.value ? new Date(el.prvni_odpoved.value).toISOString() : null,
       role_fakulty: el.role_fakulty.value, hodnota: Number.isFinite(hodnota) ? hodnota : null, typ_smlouvy: el.typ_smlouvy.value,
       cislo_smlouvy: el.cislo_smlouvy.value.trim(), duvod: el.duvod.value,
+      spokojenost: el.spokojenost.value ? Number(el.spokojenost.value) : null, zpetna_vazba: el.zpetna_vazba.value.trim(),
+      spoluprace: el.spoluprace.checked, kontakty_spoluprace: el.kontakty_spoluprace.value.trim(),
     };
     if (changes.stav === 'nerealizovano' && !changes.duvod) {
       toast('U nerealizované poptávky vyberte prosím důvod (Evidence zakázky).', 'err');
-      $('details.evidence', root).open = true;
+      $$('details.evidence', root)[0].open = true;
       el.duvod.focus();
       return;
     }
@@ -479,6 +587,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
     html = failBox(e);
   }
   if (att.isConnected) att.innerHTML = html; // dialog mohl být mezitím zavřen
+  await renderDocs();
   try {
     const h = await api.history(r.id);
     const hist = $('#hist', root);
@@ -492,7 +601,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
 function openNewRequest(returnTo, onChange) {
   openDialog(`<form data-form="req-new" class="req-new" novalidate>
     <h2 id="dlg-title">Zapsat poptávku</h2>
-    <p class="muted">Pro poptávky, které přišly e-mailem, telefonem nebo osobně. Přílohy lze nahrát do 30 minut po zapsání v detailu poptávky.</p>
+    <p class="muted">Pro poptávky, které přišly e-mailem, telefonem nebo osobně. Dokumenty (např. e-mail se zadáním nebo výkresy) přidáte po zapsání v detailu zakázky.</p>
     <div class="grid-2">
       <div class="field"><label for="n-zdroj">Jak poptávka přišla</label><select id="n-zdroj" name="zdroj">${Object.entries(ZDROJ).filter(([k]) => k !== 'formular').map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></div>
       <div class="field"><label for="n-typ">Typ zadavatele</label><select id="n-typ" name="typ_zadavatele">${options(TYP_ZAD, '')}</select></div>
@@ -822,7 +931,10 @@ export function viewAccount({ setup = false } = {}) {
     async mount(root) {
       const box = $('#acc', root);
       if (!LIVE) {
-        box.innerHTML = `<div class="card"><h2>Účet správce</h2><p>V ukázkovém režimu se přihlašuje ukázkovým účtem. Dvoufázové ověření a změna hesla jsou dostupné po napojení na databázi (viz SUPABASE.md).</p></div>`;
+        box.innerHTML = `<div class="card"><h2>Účet správce</h2>
+          <p>Web zatím běží v ukázkovém režimu bez databáze. Přihlašujete se e-mailem <code>${esc(DEMO_ADMIN.email)}</code>; zakázky a dokumenty se ukládají jen v tomto prohlížeči, proto si je pravidelně zálohujte exportem CSV.</p>
+          <p><strong>Změna hesla:</strong> ve složce projektu spusťte <code>python tools/heslo_spravce.py</code> a změnu nahrajte na web (<code>git commit -am "Heslo správce"</code> a <code>git push</code>). Do kódu se ukládá jen otisk hesla.</p>
+          <p class="muted">Dvoufázové ověření, více správců a sdílení dat mezi zařízeními přinese napojení na databázi (viz SUPABASE.md).</p></div>`;
         return;
       }
       const recovery = ss.get('ph-recovery') === '1';

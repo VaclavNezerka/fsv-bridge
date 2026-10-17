@@ -79,9 +79,15 @@ export function errorMessage(e) {
 }
 
 const randomHex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
+const toHex = (buf) => Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('');
 async function sha256hex(text) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('');
+  return toHex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
+}
+/** Otisk hesla PBKDF2-SHA256 (stejný výpočet jako tools/heslo_spravce.py). */
+async function pbkdf2hex(password, saltHex, iterations) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const salt = Uint8Array.from(saltHex.match(/../g) || [], (h) => parseInt(h, 16));
+  return toHex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations }, key, 256));
 }
 
 /** Zmenší fotku v prohlížeči (WebP, záložně JPEG): plná velikost + náhled. */
@@ -112,10 +118,13 @@ const blobToDataUrl = (blob) => new Promise((res, rej) => {
 });
 
 /** Po uplynutí doby uchování zůstane z poptávky jen statistika (číslo, data, stav, organizace, hodnota). */
-export const ANONYM = { jmeno: '[anonymizováno]', email: '', telefon: '', popis: '[anonymizováno]', poznamka: '' };
+export const ANONYM = { jmeno: '[anonymizováno]', email: '', telefon: '', popis: '[anonymizováno]', poznamka: '',
+  zpetna_vazba: '', spoluprace: false, kontakty_spoluprace: '' };
+// Vlastní dokumenty koordinátora k zakázce (nabídka, smlouva, protokol…) leží v podsložce složky s přílohami.
+export const DOCS_DIR = 'interni';
 
 // ------------------------------------------------------------------ ukázkový režim
-const LS = { catalog: 'ph-demo-catalog', requests: 'ph-demo-requests', counter: 'ph-demo-counter', session: 'ph-demo-session' };
+const LS = { catalog: 'ph-demo-catalog', requests: 'ph-demo-requests', counter: 'ph-demo-counter', session: 'ph-demo-session', vzory: 'ph-demo-vzory' };
 const store = {
   get(k, d = null) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
@@ -193,7 +202,8 @@ function newDemoRequest(d, kdo) {
     nda: d.nda === true || d.nda === 'true',
     klic: d.klic || null, zdroj: d.zdroj || 'formular', prilohy_slozka: crypto.randomUUID(), stav: d.stav || 'nova',
     pracoviste: null, poznamka: '', prvni_odpoved: null, predano_kdy: null, garant: '', role_fakulty: '', hodnota: null,
-    typ_smlouvy: '', cislo_smlouvy: '', duvod: '', historie: [{ kdy: now, stav: d.stav || 'nova', kdo }],
+    typ_smlouvy: '', cislo_smlouvy: '', duvod: '', spokojenost: null, zpetna_vazba: '', spoluprace: false, kontakty_spoluprace: '',
+    historie: [{ kdy: now, stav: d.stav || 'nova', kdo }],
   };
 }
 
@@ -236,11 +246,13 @@ const demo = {
     onProgress?.(1);
   },
 
-  session() { try { return JSON.parse(ss.get(LS.session)); } catch { return null; } },
+  session() {
+    try { const s = JSON.parse(ss.get(LS.session)); return s?.email === DEMO_ADMIN.email ? s : null; } catch { return null; }
+  },
   async signIn(email, password) {
-    if (String(email).trim().toLowerCase() !== DEMO_ADMIN.email || password !== DEMO_ADMIN.password) {
-      throw new ApiError('invalid_credentials');
-    }
+    const ok = String(email).trim().toLowerCase() === DEMO_ADMIN.email && DEMO_ADMIN.hash
+      && (await pbkdf2hex(password, DEMO_ADMIN.salt, DEMO_ADMIN.iterations)) === DEMO_ADMIN.hash;
+    if (!ok) throw new ApiError('invalid_credentials');
     ss.set(LS.session, JSON.stringify({ email: DEMO_ADMIN.email }));
     return {};
   },
@@ -252,6 +264,7 @@ const demo = {
   },
   async isAdmin() { return !!this.session(); },
   async requests() {
+    if (!store.get(LS.vzory)) await this.seedVzory();
     const list = store.get(LS.requests, []);
     for (const r of list) r.pocet_priloh = (await idb.keys(r.prilohy_slozka + '/')).length;
     return list.sort((a, b) => String(b.vytvoreno).localeCompare(String(a.vytvoreno)));
@@ -279,14 +292,35 @@ const demo = {
     for (const k of await idb.keys(req.prilohy_slozka + '/')) await idb.del(k);
     return this.updateRequest(req.id, ANONYM);
   },
+  /** Tři vzorové zakázky (poptaná, běžící, dokončená) – jen jednou; po „Obnovit výchozí data“ znovu. */
+  async seedVzory() {
+    const { vzory } = await import('./demo-vzory.js');
+    const list = store.get(LS.requests, []);
+    for (const { req, soubory } of vzory(DEMO_ADMIN.email)) {
+      if (list.some((x) => x.cislo === req.cislo)) continue;
+      list.push(req);
+      for (const f of soubory) {
+        const blob = new Blob([f.text], { type: 'text/plain' });
+        const slozka = f.slozka ? `${req.prilohy_slozka}/${f.slozka}` : req.prilohy_slozka;
+        await idb.put(`${slozka}/${f.nazev}`, { blob, type: blob.type, size: blob.size, name: f.nazev });
+      }
+    }
+    store.set(LS.requests, list);
+    store.set(LS.vzory, 1);
+  },
+  /** Přílohy od zadavatele (jen soubory přímo ve složce, bez podsložky s dokumenty koordinátora). */
   async attachments(slozka) {
     const out = [];
     for (const k of await idb.keys(slozka + '/')) {
+      if (k.slice(slozka.length + 1).includes('/')) continue;
       const v = await idb.get(k);
       out.push({ name: v.name, size: v.size, type: v.type });
     }
     return out;
   },
+  documents(slozka) { return this.attachments(`${slozka}/${DOCS_DIR}`); },
+  async uploadDoc(slozka, file, name, onProgress) { return this.upload(`${slozka}/${DOCS_DIR}`, file, name, onProgress); },
+  async deleteDoc(slozka, name) { await idb.del(`${slozka}/${DOCS_DIR}/${name}`); },
   async attachmentUrl(slozka, name) {
     const v = await idb.get(`${slozka}/${name}`);
     return v ? URL.createObjectURL(v.blob) : '';
@@ -316,6 +350,7 @@ const demo = {
     store.del(LS.catalog);
     store.del(LS.requests);
     store.del(LS.counter);
+    store.del(LS.vzory);
     await idb.clear();
   },
 };
@@ -419,7 +454,8 @@ const REF_COLS = ['id', 'pracoviste', 'kategorie', 'nazev', 'kod', 'poskytovatel
   'dodali', 'prinos', 'klicovy_prinos', 'vice', 'odkaz', 'jazyk', 'druh', 'souhlas', 'foto', 'zverejneno', 'poradi', 'zdroj'];
 // sloupce poptávky, které smí správce měnit (shodně s oprávněními v schema.sql)
 const REQ_COLS = ['stav', 'pracoviste', 'poznamka', 'jmeno', 'email', 'telefon', 'organizace', 'popis', 'typ_zadavatele', 'nda',
-  'prvni_odpoved', 'garant', 'role_fakulty', 'hodnota', 'typ_smlouvy', 'cislo_smlouvy', 'duvod'];
+  'prvni_odpoved', 'garant', 'role_fakulty', 'hodnota', 'typ_smlouvy', 'cislo_smlouvy', 'duvod',
+  'spokojenost', 'zpetna_vazba', 'spoluprace', 'kontakty_spoluprace'];
 const pick = (o, cols) => Object.fromEntries(cols.filter((c) => o[c] !== undefined).map((c) => [c, o[c]]));
 
 const live = {
@@ -486,10 +522,10 @@ const live = {
   createRequest(data) { return rpc('admin_create_request', { p: data }); },
   history(id) { return call(`/rest/v1/poptavky_historie?poptavka_id=eq.${enc(id)}&select=kdy,stav,kdo&order=kdy.desc`); },
   async deleteFiles(req) {
-    const files = await this.attachments(req.prilohy_slozka);
-    if (files.length) {
-      await call('/storage/v1/object/prilohy', { method: 'DELETE', body: { prefixes: files.map((f) => `${req.prilohy_slozka}/${f.name}`) } });
-    }
+    const s = req.prilohy_slozka;
+    const paths = [...(await this.attachments(s)).map((f) => `${s}/${f.name}`),
+      ...(await this.documents(s)).map((f) => `${s}/${DOCS_DIR}/${f.name}`)];
+    if (paths.length) await call('/storage/v1/object/prilohy', { method: 'DELETE', body: { prefixes: paths } });
   },
   async deleteRequest(req) {
     await this.deleteFiles(req);
@@ -508,6 +544,14 @@ const live = {
   async attachmentUrl(slozka, name) {
     const r = await call(`/storage/v1/object/sign/prilohy/${slozka}/${enc(name)}`, { method: 'POST', body: { expiresIn: 120 } });
     return `${SB}/storage/v1${r.signedURL}&download=${enc(name)}`;
+  },
+  documents(slozka) { return this.attachments(`${slozka}/${DOCS_DIR}`); },
+  async uploadDoc(slozka, file, name, onProgress) {
+    await ensureFresh(); // správce nahrává pod svým přihlášením (pravidlo „prilohy: spravce nahrava“)
+    return xhrUpload(`${SB}/storage/v1/object/prilohy/${slozka}/${DOCS_DIR}/${enc(name)}`, file, session.access_token, onProgress);
+  },
+  async deleteDoc(slozka, name) {
+    await call('/storage/v1/object/prilohy', { method: 'DELETE', body: { prefixes: [`${slozka}/${DOCS_DIR}/${name}`] } });
   },
   async adminCatalog() {
     if (this._adminCat && Date.now() - this._adminAt < 60000) return this._adminCat; // detail poptávky ho potřebuje opakovaně

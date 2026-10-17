@@ -152,6 +152,11 @@ alter table public.poptavky add column if not exists hodnota numeric(14, 2);    
 alter table public.poptavky add column if not exists typ_smlouvy text not null default '';
 alter table public.poptavky add column if not exists cislo_smlouvy text not null default '';
 alter table public.poptavky add column if not exists duvod text not null default '';           -- důvod nerealizace
+-- po realizaci: zpětná vazba a další spolupráce (vyplňuje koordinátor; dokumenty zakázky leží v úložišti v podsložce interni/)
+alter table public.poptavky add column if not exists spokojenost smallint;                     -- 1 až 5
+alter table public.poptavky add column if not exists zpetna_vazba text not null default '';
+alter table public.poptavky add column if not exists spoluprace boolean not null default false; -- zájem o další spolupráci
+alter table public.poptavky add column if not exists kontakty_spoluprace text not null default '';
 
 alter table public.poptavky drop constraint if exists poptavky_stav_check;
 update public.poptavky set stav = 'dokonceno' where stav = 'uzavreno';  -- starší název stavu
@@ -168,6 +173,8 @@ alter table public.poptavky add constraint poptavky_role_check check (role_fakul
 alter table public.poptavky drop constraint if exists poptavky_smlouva_check;
 alter table public.poptavky add constraint poptavky_smlouva_check check (typ_smlouvy in (
   '', 'sod', 'smluvni_vyzkum', 'licence', 'spolecny_projekt', 'jine'));
+alter table public.poptavky drop constraint if exists poptavky_spokojenost_check;
+alter table public.poptavky add constraint poptavky_spokojenost_check check (spokojenost is null or spokojenost between 1 and 5);
 alter table public.poptavky drop constraint if exists poptavky_duvod_check;
 alter table public.poptavky add constraint poptavky_duvod_check check (duvod in (
   '', 'cena', 'termin', 'kapacita', 'mimo_zamereni', 'bez_reakce', 'jiny_dodavatel', 'jine'));
@@ -399,7 +406,8 @@ grant select, insert, update, delete on public.kategorie, public.pracoviste, pub
 revoke insert, update on public.poptavky from authenticated;
 grant select, delete on public.poptavky to authenticated;
 grant update (stav, pracoviste, poznamka, jmeno, email, telefon, organizace, popis, typ_zadavatele, termin, nda,
-  prvni_odpoved, garant, role_fakulty, hodnota, typ_smlouvy, cislo_smlouvy, duvod) on public.poptavky to authenticated;
+  prvni_odpoved, garant, role_fakulty, hodnota, typ_smlouvy, cislo_smlouvy, duvod,
+  spokojenost, zpetna_vazba, spoluprace, kontakty_spoluprace) on public.poptavky to authenticated;
 revoke all on public.poptavky_historie from authenticated;
 grant select on public.poptavky_historie to authenticated;
 revoke all on sequence public.poptavky_cislo_seq from anon, authenticated;
@@ -677,11 +685,13 @@ begin
     return false;
   end if;
   perform pg_advisory_xact_lock(hashtext('fsv-problem-hub:prilohy:' || v_folder));
-  select count(*) into v_cnt from storage.objects o where o.bucket_id = 'prilohy' and o.name like v_folder || '/%';
+  select count(*) into v_cnt from storage.objects o
+   where o.bucket_id = 'prilohy' and o.name like v_folder || '/%' and o.name not like v_folder || '/interni/%';
   if v_cnt >= 5 then
     return false;
   end if;
-  select count(*) into v_cnt from storage.objects o where o.bucket_id = 'prilohy' and o.created_at > now() - interval '1 day';
+  select count(*) into v_cnt from storage.objects o
+   where o.bucket_id = 'prilohy' and o.created_at > now() - interval '1 day' and o.name not like '%/interni/%';
   return v_cnt < 150;
 end;
 $$;

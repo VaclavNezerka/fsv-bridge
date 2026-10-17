@@ -13,7 +13,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 | Uživatel | Cíl | Co mu aplikace nabízí |
 |---|---|---|
 | Zadavatel z praxe (firma, projektant, investor, obec) | Rychle zjistit, zda a jak fakulta pomůže | Přehled 108 témat expertízy a 45 výzkumných projektů z 25 pracovišť (říjen 2026). Formulář na jedné stránce bez registrace a odpověď zpravidla do 10 pracovních dnů |
-| Koordinátor (správce) | Třídit poptávky a předávat je pracovištím | Přehled poptávek se stavy, lhůtami a historií, e-mailové šablony, evidence zakázek pro vykazování, export CSV, úpravy přehledu expertízy a projektů |
+| Koordinátor (správce) | Třídit poptávky, předávat je pracovištím a sledovat zakázky | Přehled poptávek a zakázek se stavem rozpracovanosti, lhůtami a historií, vlastní dokumenty k zakázce, hodnota, poznámky, zpětná vazba a kontakty pro další spolupráci, e-mailové šablony, export CSV, úpravy přehledu expertízy a projektů |
 | Pracoviště fakulty | Získat zakázky a partnery | Prezentaci své expertízy a předané poptávky s kontaktem na zadavatele |
 
 ## 3. Principy návrhu
@@ -36,7 +36,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 | Realizované projekty | `#/reference`, `#/reference/<id>` | Výzkumné a vývojové projekty: co bylo potřeba, co fakulta vyvinula, přínos. Zakázkové reference se nezveřejňují |
 | Zadat poptávku | `#/poptavka`, `#/odeslano` | Formulář na jedné stránce. Výsledkem je číslo poptávky (např. PH-2026-0001) a popis dalšího postupu |
 | Právní informace | `#/osobni-udaje`, `#/podminky`, `#/pristupnost` | Návrhy textů k posouzení |
-| Administrace | `#/admin/…` | Poptávky, nabídky, reference, pracoviště a účet (dvoufázové ověření, změna hesla) |
+| Administrace | `#/admin/…` | Poptávky a zakázky, expertíza, reference, pracoviště a účet (dvoufázové ověření, změna hesla) |
 
 ## 5. Ochrana proti robotům bez CAPTCHA
 
@@ -60,7 +60,7 @@ Kdyby spam přesto pronikal, lze doplnit Cloudflare Turnstile. Jde o neviditelno
 
 - Poptávky, kontakty a přílohy vidí jen účet zapsaný v tabulce správců. Kontrolu dělá databáze (Row Level Security), ne prohlížeč.
 - **Dvoufázové ověření (TOTP) je povinné.** Databáze vydá poptávky jen po ověření kódem (úroveň `aal2`); bez nastaveného faktoru pustí administrace správce jen do nastavení účtu. Vypnout lze jen vědomě v databázi (`require_mfa`) pro první test.
-- Přílohy leží v neveřejném úložišti. Správce je stahuje přes odkazy platné 2 minuty.
+- Přílohy leží v neveřejném úložišti. Správce je stahuje přes odkazy platné 2 minuty. Vlastní dokumenty koordinátora k zakázce leží ve stejné složce v podsložce `interni/`; zadavatel je nevidí a veřejné limity nahrávání se na ně nevztahují.
 - Web nepoužívá cookies ani analytiku a nenačítá nic z cizích serverů. Bezpečnostní politika obsahu (CSP) povoluje spojení jen s vlastní databází.
 - Upozornění na novou poptávku (volitelný webhook) obsahuje jen číslo poptávky.
 - Registrace jsou vypnuté. Správce se zakládá ručně (viz [SUPABASE.md](SUPABASE.md)).
@@ -96,6 +96,8 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 | Kdo poptává, dohoda o mlčenlivosti | ne | upřesnění pro koordinátora |
 | *Interní:* stav, pracoviště, garant, poznámka, historie stavů | – | vyplňuje koordinátor |
 | *Evidence zakázky:* první odpověď, role fakulty, hodnota, typ a číslo smlouvy, důvod nerealizace | – | pro vykazování a úspěšnost |
+| *Dokumenty zakázky:* nabídka, smlouva, NDA, protokoly, korespondence | – | nahrává koordinátor, interní |
+| *Po realizaci:* spokojenost (1–5), zpětná vazba, zájem o další spolupráci, kontakty a příležitosti | – | vyhodnocení a další spolupráce |
 
 **Stavy (cesta od poptávky ke smlouvě):** Nová → Řeší se → Předáno pracovišti → Nabídka odeslána → Zakázka v realizaci → Dokončeno, případně Nerealizováno. Stav „Spam / karanténa“ slouží k odložení nevyžádaných poptávek a zachycení poptávek nad limitem. Přehled z nich počítá kvalifikovaná zadání pro KPI 4 (předaná pracovišti nebo dál, ne od soukromých osob), poptávky v jednání a úspěšnost (podíl zakázek z rozhodnutých poptávek).
 
@@ -105,6 +107,9 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 - tlačítko „Odpovědět zadavateli“ otevře e-mail s připravenou šablonou a zapíše datum první odpovědi, „Zdvořile odmítnout“ připraví odmítnutí,
 - tlačítko „Předat pracovišti e-mailem“ otevře e-mail garantům vybraného pracoviště se shrnutím poptávky a předvyplní stav „Předáno pracovišti“,
 - „Kopírovat souhrn poptávky“ vloží úplný text do schránky (odkaz v e-mailu má omezenou délku),
+- stav rozpracovanosti se v detailu ukazuje jako řada kroků od poptávky po dokončení a přehled sčítá objem zakázek (realizované a dokončené, bez DPH),
+- k zakázce lze nahrát vlastní dokumenty a do poznámek jedním klepnutím vložit dnešní datum,
+- zadavatele se zájmem o další spolupráci ukáže samostatný filtr,
 - „Zapsat poptávku“ eviduje i poptávky, které přišly telefonem, e-mailem nebo osobně,
 - u poptávky se ukážou další poptávky téže organizace (vztah se zadavatelem, střet zájmů),
 - anonymizace (po uplynutí doby uchování nebo na žádost) ponechá údaje pro statistiku a filtr „ke skartaci“ ukáže poptávky po lhůtě uchování.
@@ -131,7 +136,7 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 
 - Web běží na **GitHub Pages** a jeho odkaz je veřejný. Pod heslem pracuje jen správce, jak požadovalo zadání. Repozitář neobsahuje osobní údaje ani kontakty pracovníků a sestavení to kontroluje.
 - Během testování web zakazuje indexaci (`noindex`, `robots.txt`) a ukazuje pruh „Testovací verze“.
-- Bez napojení na databázi běží **ukázkový režim**: vše zůstává v prohlížeči návštěvníka a do administrace vede ukázkový účet. Je vhodný pro náhledy a připomínky.
+- Bez napojení na databázi běží **ukázkový režim**: vše zůstává v prohlížeči návštěvníka. Do administrace se přihlašuje koordinátor heslem, které je v kódu uložené jen jako otisk (mění se nástrojem `tools/heslo_spravce.py`); administrace obsahuje tři vzorové zakázky. Režim je vhodný pro náhledy a připomínky, ne pro skutečná data zadavatelů.
 - Po napojení na Supabase ([SUPABASE.md](SUPABASE.md)) přijímá web skutečné poptávky.
 
 ## 10. Cesta k ostrému provozu

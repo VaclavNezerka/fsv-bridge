@@ -31,9 +31,10 @@ ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "src"
 OUT = ROOT / "publish"
 EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
-# adresy, které smějí být ve zdrojích webu: ukázkový účet a vzor v nápovědě formuláře
-# (k nim se přidá koordinátor a pověřenec z config.js)
-ALLOWED_EMAILS = {"demo@fsv.cvut.cz", "jmeno@firma.cz"}
+# adresy, které smějí být ve zdrojích webu: vzor v nápovědě formuláře (k nim se přidá koordinátor a pověřenec
+# z config.js) a smyšlené adresy vzorových zakázek v doménách vyhrazených pro příklady (RFC 2606)
+ALLOWED_EMAILS = {"jmeno@firma.cz"}
+EXAMPLE_DOMAIN = re.compile(r"@example\.(com|org|net)$")
 MAX_FILE_MB = 25
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -153,7 +154,7 @@ def check_public_data(out: Path, public_emails: set) -> None:
     allowed = ALLOWED_EMAILS | public_emails  # koordinátor a pověřenec jsou veřejné kontakty
     for f in out.rglob("*"):
         if f.suffix in (".js", ".html", ".css", ".json", ".txt", ".svg"):
-            extra = {e.lower() for e in EMAIL_RE.findall(f.read_text(encoding="utf-8"))} - allowed
+            extra = {e.lower() for e in EMAIL_RE.findall(f.read_text(encoding="utf-8")) if not EXAMPLE_DOMAIN.search(e.lower())} - allowed
             if extra:
                 fail(f"soubor {f.relative_to(out)} obsahuje neočekávané e-maily: {', '.join(sorted(extra))}")
 
