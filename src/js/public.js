@@ -443,11 +443,7 @@ export function viewReference(id) {
           ${r.vice ? `<p class="muted">${esc(r.vice)}</p>` : ''}
           ${link ? `<p><a href="${esc(link)}" target="_blank" rel="noopener noreferrer">${icon('external', 17)} ${L('Více o projektu', 'More about the project')}</a></p>` : ''}
         </article>
-        <aside class="detail-side">
-          ${facts.length ? `<dl class="facts card-facts">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>` : ''}
-          <div class="cta-card"><h2>${L('Řešíte podobný problém?', 'Facing a similar problem?')}</h2><p>${L('Popište ho a koordinátor vás propojí s odborníky fakulty.', "Describe it and our coordinator will connect you with the faculty's experts.")}</p>
-          <a class="btn btn-primary btn-block" href="#/poptavka">${L('Zadat poptávku', 'Submit an enquiry')} ${icon('arrow', 18)}</a></div>
-        </aside>
+        ${facts.length ? `<aside class="detail-side"><dl class="facts card-facts">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></aside>` : ''}
       </div>
       ${related.length ? `<section class="section"><div class="section-head"><h2>${L('Expertíza pracoviště', 'Expertise of this department')}</h2><a href="#/nabidka?p=${encodeURIComponent(r.pracoviste)}">${L('Vše, co pracoviště umí', 'All expertise of this department')} ${icon('arrow', 18)}</a></div>
         <div class="grid cards-3">${related.map(offerCard).join('')}</div></section>` : ''}
@@ -523,7 +519,15 @@ export function viewRequest() {
           </fieldset>
           <div class="hp" aria-hidden="true"><label for="f-web">${L('Toto pole nevyplňujte', 'Leave this field empty')}</label><input id="f-web" name="web" type="text" tabindex="-1" autocomplete="off"></div>
           <div class="submit-row">
-            <p class="verify" id="verify">${icon('shield', 18)} <span>${L('Ochrana proti spamu se ověří automaticky – nic nevyplňujete.', 'Spam protection runs automatically – there is nothing to fill in.')}</span></p>
+            <div class="field verify-field" data-field="overeni">
+              <p class="field-error" id="e-overeni" hidden></p>
+              <button type="button" class="verify-box idle" id="f-overeni" aria-pressed="false" aria-describedby="h-overeni e-overeni">
+                <span class="vb-check" aria-hidden="true">${icon('check', 18)}</span>
+                <span class="vb-text"><strong class="vb-title">${L('Klikněte pro ověření, že nejste robot', 'Click to confirm you are not a robot')}</strong>
+                  <span class="vb-hint" id="h-overeni">${L('Ochrana proti spamu: krátký výpočet v prohlížeči, bez opisování obrázků a bez sledování.', 'Spam protection: a short computation in your browser – no picture puzzles, no tracking.')}</span></span>
+                ${icon('shield', 24)}
+              </button>
+            </div>
             <p class="small muted">${L(`Odesláním berete na vědomí <button type="button" class="linklike" data-doc="podminky">podmínky</button> a <button type="button" class="linklike" data-doc="osobni-udaje">informace o zpracování osobních údajů</button>. Poptávku a přílohy uvidí jen koordinátor a pracoviště, které ji bude řešit.`,
               `By submitting, you acknowledge the <button type="button" class="linklike" data-doc="podminky">terms of use</button> and the <button type="button" class="linklike" data-doc="osobni-udaje">privacy notice</button>. Your enquiry and attachments will be seen only by the coordinator and the department handling it.`)}</p>
             <button type="submit" class="btn btn-primary btn-lg" id="send">${L('Odeslat poptávku', 'Send enquiry')} ${icon('arrow', 20)}</button>
@@ -605,25 +609,34 @@ export function viewRequest() {
         $('#progress-text', root).textContent = text;
         $('#bar', root).style.width = Math.round(Math.max(0.03, frac) * 100) + '%';
       };
-      let powStarted = false;
-      const startPow = () => {
-        if (powStarted) return;
-        powStarted = true;
-        const v = $('#verify', root);
-        v.className = 'verify working';
-        v.lastElementChild.textContent = L('Ověřujeme, že nejste robot…', 'Checking that you are not a robot…');
-        pow.prepare().then(() => {
-          v.className = 'verify ok';
-          v.innerHTML = `${icon('shield', 18)} <span>${L('Ochrana proti spamu ověřena.', 'Spam protection verified.')}</span>`;
-        }).catch(() => {
-          powStarted = false;
-          v.className = 'verify';
-          v.lastElementChild.textContent = L('Ověření se zatím nepodařilo – zkusíme to znovu při odeslání.', 'Verification has not completed yet – we will retry when you submit.');
-        });
+      // Ochrana proti robotům: výpočet běží na pozadí od začátku vyplňování, zadavatel ho potvrdí kliknutím na ověření.
+      let overeno = false;
+      const vb = $('#f-overeni', root);
+      const setVerify = (stav) => {
+        vb.className = `verify-box ${stav}`;
+        vb.setAttribute('aria-pressed', String(stav === 'ok'));
+        $('.vb-title', vb).textContent = {
+          idle: L('Klikněte pro ověření, že nejste robot', 'Click to confirm you are not a robot'),
+          working: L('Ověřujeme, že nejste robot…', 'Checking that you are not a robot…'),
+          ok: L('Ověřeno – poptávku můžete odeslat', 'Verified – you can send your enquiry'),
+          fail: L('Ověření se nepodařilo – klikněte prosím znovu', 'Verification failed – please click again'),
+        }[stav];
       };
+      vb.addEventListener('click', async () => {
+        if (overeno || vb.classList.contains('working')) return;
+        setVerify('working');
+        try {
+          await pow.prepare();
+          overeno = true;
+          setVerify('ok');
+          setError('overeni', '');
+        } catch {
+          setVerify('fail');
+        }
+      });
 
       counter();
-      form.addEventListener('focusin', startPow, { once: true });
+      form.addEventListener('focusin', () => { pow.prepare().catch(() => {}); }, { once: true });
       form.addEventListener('input', (e) => {
         const k = e.target.name;
         if (![...FIELDS, 'typ', 'nda'].includes(k)) return;
@@ -648,10 +661,10 @@ export function viewRequest() {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (busy) return;
-        startPow();
         const data = Object.fromEntries(FIELDS.map((k) => [k, form.elements[k].value.trim()]));
         const errs = validateRequest(data);
-        FIELDS.forEach((k) => setError(k, errs[k] || ''));
+        if (!overeno) errs.overeni = L('Klikněte na ověření, že nejste robot.', 'Click to confirm that you are not a robot.');
+        [...FIELDS, 'overeni'].forEach((k) => setError(k, errs[k] || ''));
         const sum = $('#err-sum', root);
         if (Object.keys(errs).length) {
           sum.hidden = false;
@@ -698,7 +711,7 @@ export function viewRequest() {
           klic = crypto.randomUUID();
           go('#/odeslano');
         } catch (err) {
-          if (/^pow_|too_fast/.test(err.code || '')) { pow.reset(); powStarted = false; startPow(); }
+          if (/^pow_|too_fast/.test(err.code || '')) { pow.reset(); overeno = false; setVerify('idle'); } // novou výzvu potvrdí znovu kliknutím
           sum.hidden = false;
           // při výpadku spojení nebo databáze nabídneme náhradní cestu, aby poptávka nepropadla
           const mail = /^(invalid_|spam)/.test(err.code || '') ? '' : `<p>${L('Pokud potíže trvají, pošlete poptávku e-mailem na', 'If the problem persists, please send your enquiry by email to')}

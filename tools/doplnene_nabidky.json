@@ -23,7 +23,7 @@
     "Metodika publikovaná v časopisech Experimental Techniques, Materials and Structures a Construction and Building Materials; otevřený software a data na Zenodo"
    ],
    "garanti": [
-    {"jmeno": "doc. Ing. Václav Nežerka, Ph.D.", "oblast": "Korelace digitálního obrazu, optická měření v laboratoři i in-situ, vývoj vyhodnocovacího softwaru"}
+    {"jmeno": "Václav Nežerka", "oblast": "Korelace digitálního obrazu, optická měření v laboratoři i in-situ, vývoj vyhodnocovacího softwaru"}
    ],
    "klicova_slova": ["korelace digitálního obrazu", "DIC", "bezkontaktní měření", "pole posunů", "zatěžovací zkoušky", "trhliny"],
    "horizon": "",
@@ -55,7 +55,7 @@
     "Chytrý kontejner pro autonomní monitorování stavebního odpadu (projekt Horizon Europe RECONMATIC) – rozpoznání materiálu s přesností 92 % a zaplnění 95 % přímo v zařízení, spotřeba 3,3 µA v hlubokém spánku, otevřený kód"
    ],
    "garanti": [
-    {"jmeno": "doc. Ing. Václav Nežerka, Ph.D.", "oblast": "IoT a edge AI, kamerové systémy, strojové učení"}
+    {"jmeno": "Václav Nežerka", "oblast": "IoT a edge AI, kamerové systémy, strojové učení"}
    ],
    "klicova_slova": ["IoT", "monitoring", "edge AI", "NB-IoT", "senzory", "kamerové systémy"],
    "horizon": "",
@@ -85,7 +85,7 @@
    ],
    "vysledky": [],
    "garanti": [
-    {"jmeno": "doc. Ing. Václav Nežerka, Ph.D.", "oblast": "Vysokorychlostní záznam a jeho vyhodnocení, korelace digitálního obrazu (Katedra fyziky)"}
+    {"jmeno": "Václav Nežerka", "oblast": "Vysokorychlostní záznam a jeho vyhodnocení, korelace digitálního obrazu (Katedra fyziky)"}
    ],
    "klicova_slova": ["vysokorychlostní kamera", "rychlé děje", "rázové zkoušky", "balistika", "DIC"],
    "horizon": "",

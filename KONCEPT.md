@@ -1,6 +1,6 @@
 # FSv Problem Hub – koncept aplikace
 
-Testovací verze, říjen 2026. Koordinátor: doc. Ing. Václav Nežerka, Ph.D.
+Testovací verze, říjen 2026. Koordinátor: Václav Nežerka
 
 ## 1. Účel
 
@@ -22,7 +22,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 - **Přehled expertízy jen pro orientaci.** „Co umíme“ není katalog služeb k objednání: zadavatel nevybírá konkrétní téma ani dovednost (detail tématu proto nemá tlačítko poptávky), popíše svůj problém a vhodné pracoviště vybere koordinátor. Vyhledávání nebere ohled na diakritiku a tvary slov, filtruje se podle oboru a pracoviště. Když hledání nic nenajde, nabídne web zadání poptávky s hledaným výrazem.
 - **Jeden kontakt.** U témat expertízy se veřejně uvádí jen pracoviště (katedra). Jména garantů a kontakty pracovníků zná jen koordinátor, takže poptávky neobcházejí evidenci.
 - **Důvěrnost.** Poptávky, kontaktní údaje a přílohy vidí jen správce a pracoviště, kterému je předá. Nic z toho se nezveřejňuje. Zadavatel může nejdřív požádat o dohodu o mlčenlivosti.
-- **Bez překážek.** Formulář nemá CAPTCHA ani povinnou registraci. Rozepsaná poptávka se průběžně ukládá v prohlížeči (do zavření okna) a chyby se ukazují v souhrnu i u jednotlivých polí.
+- **Bez překážek.** Formulář nemá CAPTCHA ani povinnou registraci – ochranu proti robotům zadavatel jen potvrdí jedním kliknutím. Rozepsaná poptávka se průběžně ukládá v prohlížeči (do zavření okna) a chyby se ukazují v souhrnu i u jednotlivých polí.
 - **Česky i anglicky.** Veřejná část má anglickou verzi pro zahraniční firmy a výzkumné partnery. Přepíná se vlajkou vpravo nahoře vedle zámku Admin a lze na ni odkazovat adresou s `?lang=en`. Odborné texty používají britskou angličtinu a oficiální anglické názvy pracovišť. Administrace zůstává česká, poptávky z anglické verze jsou v ní označené a šablony odpovědí jsou anglicky.
 - **Přístupnost a mobilní zobrazení.** Cílem je WCAG 2.1 AA: ovládání klávesnicí, popisky polí, kontrast, alternativní texty a respektování omezení animací. Web funguje od šířky 360 px.
 - **Vizuální styl ČVUT.** Modrá ČVUT (#0065BD) a písmo Technika s náhradním systémovým písmem. Oficiální logo se doplní podle manuálu vizuální identity.
@@ -34,7 +34,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 |---|---|---|
 | Úvod | `#/` | Výzva k zadání poptávky, vyhledávání, rychlé volby, obory, postup ve 3 krocích, vybrané projekty, časté dotazy |
 | Co umíme | `#/nabidka`, `#/nabidka/<id>` | Přehled expertízy s filtry. Detail tématu obsahuje pracoviště, zaměření, doložené výsledky a fotografie. Konkrétní téma se nepoptává – poptávka se zadává obecně (tlačítko „Zadat poptávku“ v záhlaví) |
-| Realizované projekty | `#/reference`, `#/reference/<id>` | Výzkumné a vývojové projekty: co bylo potřeba, co fakulta vyvinula, přínos. Zakázkové reference se nezveřejňují |
+| Realizované projekty | `#/reference`, `#/reference/<id>` | Výzkumné a vývojové projekty: co bylo potřeba, co fakulta vyvinula, přínos, financování a řešitelé. Zakázkové reference se nezveřejňují |
 | Zadat poptávku | `#/poptavka`, `#/odeslano` | Formulář na jedné stránce. Výsledkem je číslo poptávky (např. PH-2026-0001) a popis dalšího postupu |
 | Právní informace | `#/osobni-udaje`, `#/podminky`, `#/pristupnost` | Návrhy textů k posouzení |
 | Anglická verze | `?lang=en#/…` (vlajka vpravo nahoře) | Všechny veřejné stránky v angličtině, volba jazyka se pamatuje v prohlížeči |
@@ -48,9 +48,9 @@ Zadání požadovalo ověřit, že poptávku odesílá člověk. Obrázková CAP
 - obtěžuje zadavatele, kterých si fakulta cení,
 - u řešení třetích stran přenáší údaje o návštěvnících mimo EU a obvykle vyžaduje souhlas s cookies.
 
-Aplikace proto používá vrstvenou, pro člověka neviditelnou ochranu:
+Aplikace proto používá vrstvenou ochranu, která člověka nezdržuje:
 
-1. **Výpočetní úloha (proof-of-work).** Server vydá výzvu podepsanou tajným klíčem (HMAC-SHA-256) a prohlížeč ji na pozadí vyřeší (SHA-256), zatímco člověk vyplňuje formulář. Výzva platí 30 minut a lze ji použít jen jednou. Hromadné rozesílání spamu tím prodraží. Princip je stejný jako u otevřeného projektu ALTCHA.
+1. **Výpočetní úloha (proof-of-work) potvrzená kliknutím.** Server vydá výzvu podepsanou tajným klíčem (HMAC-SHA-256) a prohlížeč ji na pozadí vyřeší (SHA-256), zatímco člověk vyplňuje formulář. Před odesláním zadavatel klikne na výrazné pole „Klikněte pro ověření, že nejste robot“ – bez opisování obrázků; je-li výpočet hotový, ověření proběhne hned. Bez potvrzení formulář upozorní stejně jako na chybějící údaj. Výzva platí 30 minut a lze ji použít jen jednou. Hromadné rozesílání spamu tím prodraží. Princip je stejný jako u otevřeného projektu ALTCHA.
 2. **Skryté pole (honeypot).** Člověk ho nevidí, robot ho vyplní a poptávka skončí v karanténě (stav spam), aniž by se to robot dozvěděl.
 3. **Minimální doba vyplnění.** Server odmítne poptávku odeslanou dříve než 3 s po vydání výzvy.
 4. **Omezení počtu.** Víc než 5 poptávek za hodinu z jedné adresy (IPv6 po síti /64) nebo víc než 100 celkem se neodmítne, ale uloží do karantény – útočník tak formulář nevyřadí a skutečná poptávka se neztratí. Až nad 20 z jedné adresy nebo 500 celkem se odeslání odmítne. IP adresa se ukládá jen jako otisk se solí a maže se zhruba po hodině (zásady slibují nejpozději do 24 hodin).
@@ -161,7 +161,7 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 | Parametr | Navrženo | Kde se mění |
 |---|---|---|
 | Lhůta první odezvy | 10 pracovních dnů | `responseDays` v `src/js/config.js` |
-| Koordinátor a kontakt | doc. Ing. Václav Nežerka, Ph.D. | `coordinator` v `src/js/config.js` |
+| Koordinátor a kontakt | Václav Nežerka | `coordinator` v `src/js/config.js` |
 | Pověřenec pro ochranu osobních údajů | dpo@cvut.cz | `dpo` v `src/js/config.js` |
 | Doba uložení údajů bez smlouvy | 3 roky | text `DOCS` v `src/js/public.js` |
 | Přílohy | 5 souborů po 10 MB | `src/js/config.js` a `supabase/schema.sql` |

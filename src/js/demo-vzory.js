@@ -19,16 +19,16 @@ export function vzory(kdo) {
       req: {
         ...zaklad, id: 'vzor-1', cislo: 'VZOR-1', vytvoreno: iso(130), zmeneno: iso(82), zdroj: 'formular',
         stav: 'dokonceno', typ_zadavatele: 'verejna', prilohy_slozka: '00000000-0000-4000-8000-0000000000a1',
-        jmeno: 'Ing. Jana Vzorová', organizace: 'Město Příkladov', email: 'jana.vzorova@example.com',
+        jmeno: 'Jana Vzorová', organizace: 'Město Příkladov', email: 'jana.vzorova@example.com',
         popis: 'Po rekonstrukci ocelové lávky pro pěší přes řeku potřebujeme před uvedením do provozu statickou zatěžovací '
           + 'zkoušku. Lávka má rozpětí 32 m, stavba bude dokončena koncem dubna. Prosíme o nabídku včetně protokolu pro stavební úřad.',
-        pracoviste: 'K134', garant: 'Ing. Pavel Ukázka, Ph.D.', role_fakulty: 'dodavatel', hodnota: 185000,
+        pracoviste: 'K134', garant: 'Pavel Ukázka', role_fakulty: 'dodavatel', hodnota: 185000,
         typ_smlouvy: 'sod', cislo_smlouvy: 'VZOR-SOD-01', prvni_odpoved: iso(128), predano_kdy: iso(128),
         poznamka: 'Vzorová zakázka. Zkouška proběhla podle harmonogramu, protokol předán zadavateli i stavebnímu úřadu. '
           + 'Fakturováno po předání protokolu.',
         spokojenost: 5, zpetna_vazba: 'Rychlá domluva, zkouška proběhla bez komplikací a protokol byl srozumitelný i pro stavební úřad.',
         spoluprace: true,
-        kontakty_spoluprace: 'Ing. Jana Vzorová – vedoucí odboru investic (jana.vzorova@example.com). '
+        kontakty_spoluprace: 'Jana Vzorová – vedoucí odboru investic (jana.vzorova@example.com). '
           + 'Město v příštích dvou letech plánuje rekonstrukci dalších dvou lávek a má zájem o dlouhodobý monitoring mostních objektů.',
         historie: historie(130, [['nova', 0, 'formulář'], ['resi_se', 1], ['predano', 2], ['nabidka', 9], ['realizace', 16], ['dokonceno', 48]]),
       },
@@ -47,12 +47,12 @@ export function vzory(kdo) {
         jmeno: 'Petr Ukázka', organizace: 'Ukázkové betonárny s.r.o.', email: 'petr.ukazka@example.org', telefon: '+420 123 456 789',
         popis: 'Vyvíjíme lehký beton s recyklovaným kamenivem z demolic a hledáme partnera pro experimentální ověření mechanických '
           + 'vlastností a trvanlivosti. Zajímá nás i optimalizace receptury a možnost společného projektu TA ČR.',
-        pracoviste: 'K123', garant: 'doc. Ing. Eva Příkladná, Ph.D.', role_fakulty: 'dodavatel', hodnota: 420000,
+        pracoviste: 'K123', garant: 'Eva Příkladná', role_fakulty: 'dodavatel', hodnota: 420000,
         typ_smlouvy: 'smluvni_vyzkum', cislo_smlouvy: 'VZOR-SV-02', prvni_odpoved: iso(47), predano_kdy: iso(47),
         poznamka: 'Vzorová zakázka. Dohoda o mlčenlivosti podepsána před předáním receptur. Průběžná zpráva po třech měsících, '
           + 'závěrečná zpráva s doporučenou recepturou na konci smlouvy.',
         spoluprace: true,
-        kontakty_spoluprace: 'Ing. Lucie Testová – technoložka výroby (lucie.testova@example.org). '
+        kontakty_spoluprace: 'Lucie Testová – technoložka výroby (lucie.testova@example.org). '
           + 'Zájem o společný projekt v příští výzvě TA ČR a o odborné stáže studentů.',
         historie: historie(48, [['nova', 0, 'e-mail'], ['predano', 1], ['nabidka', 12], ['realizace', 28]]),
       },

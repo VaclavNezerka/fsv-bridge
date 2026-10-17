@@ -99,7 +99,7 @@ Veřejná část webu je česky a anglicky. Jazyk se přepíná vlajkou vpravo n
   python tools/preklad_katalogu.py merge prelozeno.json
   ```
 
-  `export` uloží česká pole položek bez aktuálního překladu, přeložený soubor se stejnou strukturou (jména osob beze změny) doplní příkaz `merge`. Po napojení na databázi přidejte před příkaz `--katalog publish/data/expertiza.json`, aby se překlad porovnával s aktuálním katalogem z databáze (soubor vytvoří `python build.py`).
+  `export` uloží česká pole položek bez aktuálního překladu, přeložený soubor se stejnou strukturou (jména osob beze změny) doplní příkaz `merge`. Pokud se v češtině změnilo jen jméno nebo překlep a anglický text platí dál, stačí `python tools/preklad_katalogu.py potvrdit <id položky>`. Po napojení na databázi přidejte před příkaz `--katalog publish/data/expertiza.json`, aby se překlad porovnával s aktuálním katalogem z databáze (soubor vytvoří `python build.py`).
 
 ## Kde co upravit
 

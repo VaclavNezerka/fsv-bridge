@@ -12,7 +12,7 @@ export const CONFIG = {
   testBanner: true,          // pruh „testovací verze“ nahoře
 
   coordinator: {
-    name: 'doc. Ing. Václav Nežerka, Ph.D.',
+    name: 'Václav Nežerka',
     role: 'koordinátor FSv Problem Hub',
     email: 'vaclav.nezerka@cvut.cz',
   },

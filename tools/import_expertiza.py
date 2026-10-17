@@ -133,6 +133,22 @@ TEXT_FIXES = {
 }
 
 
+# Jména bez akademických titulů na přání jejich nositelů (17. 10. 2026) – platí na webu i v administraci.
+JMENA = {"doc. Ing. Václav Nežerka, Ph.D.": "Václav Nežerka", "Ing. Václav Nežerka, Ph.D.": "Václav Nežerka"}
+
+
+def jmena_bez_titulu(nabidky, reference):
+    def fix(s):
+        for k, v in JMENA.items():
+            s = s.replace(k, v)
+        return s
+    for n in nabidky:
+        for p in n.get("garanti", []) + n.get("kontakty", []):
+            p["jmeno"] = fix(p.get("jmeno", ""))
+    for r in reference:
+        r["resitel"] = fix(r.get("resitel", ""))
+
+
 def clean(s):
     s = unicodedata.normalize("NFC", s or "")
     s = s.replace(" ", " ").replace("​", "").replace("­", "")
@@ -1225,6 +1241,7 @@ def main():
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     doplnit_nabidky(nabidky, used_ids, report, warnings)
+    jmena_bez_titulu(nabidky, reference)
 
     used = {n["pracoviste"] for n in nabidky} | {r["pracoviste"] for r in reference}
     pracoviste = [{"kod": k, "nazev": PRACOVISTE[k][0], "kategorie": PRACOVISTE[k][1], "poradi": i + 1}

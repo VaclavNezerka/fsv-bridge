@@ -9,6 +9,7 @@ Použití (z kořene projektu):
   python tools/preklad_katalogu.py stav                  -> kolik položek chybí nebo je zastaralých
   python tools/preklad_katalogu.py export k-prekladu.json -> položky bez aktuálního překladu (česky)
   python tools/preklad_katalogu.py merge prelozeno.json   -> doplní přeložené položky do expertiza.en.json
+  python tools/preklad_katalogu.py potvrdit <id> [<id>…]  -> překlad platí i po drobné změně češtiny (např. jména)
 
 Český katalog se čte ze src/data/expertiza.json. Po napojení na databázi zadejte před příkazem
 --katalog publish/data/expertiza.json (aktuální katalog z databáze, který stáhne build.py).
@@ -137,6 +138,20 @@ def merge(soubor):
     tisk_stav(stav(cs, en))
 
 
+def potvrdit(ids):
+    """Obnoví otisk českého zdroje u položek, jejichž anglický překlad platí i po drobné změně češtiny."""
+    cs, en = nacti()
+    puvodni = {kind: {x["id"]: x for x in cs.get(kind, [])} for kind in POLE}
+    for kind in POLE:
+        for t in en.get(kind, []):
+            if t["id"] in ids and t["id"] in puvodni[kind]:
+                t["h"] = otisk(puvodni[kind][t["id"]], kind)
+                print("  potvrzeno:", t["id"])
+    EN.write_text(json.dumps({k: en[k] for k in ("kategorie", "pracoviste", "nabidky", "reference")}, ensure_ascii=False,
+                             separators=(",", ":")), encoding="utf-8", newline="\n")
+    tisk_stav(stav(cs, en))
+
+
 def tisk_stav(s):
     for kind, (chybi, stare) in s.items():
         print(f"{kind}: chybí {len(chybi)}, zastaralé {len(stare)}")
@@ -151,12 +166,14 @@ if __name__ == "__main__":
     if args[:1] == ["--katalog"] and len(args) > 1:
         CS = Path(args[1])
         args = args[2:]
-    if not args or args[0] not in ("stav", "export", "merge"):
+    if not args or args[0] not in ("stav", "export", "merge", "potvrdit"):
         sys.exit(__doc__)
     if args[0] == "stav":
         tisk_stav(stav())
     elif args[0] == "export":
         export(args[1] if len(args) > 1 else "k-prekladu.json")
+    elif args[0] == "potvrdit":
+        potvrdit(set(args[1:]))
     else:
         if len(args) < 2:
             sys.exit("Zadejte soubor s překladem.")
