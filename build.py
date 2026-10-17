@@ -31,9 +31,9 @@ ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "src"
 OUT = ROOT / "publish"
 EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
-# adresy, které smějí být ve zdrojích webu: vzor v nápovědě formuláře (k nim se přidá koordinátor a pověřenec
+# adresy, které smějí být ve zdrojích webu: vzory v nápovědě formuláře (k nim se přidá koordinátor a pověřenec
 # z config.js) a smyšlené adresy vzorových zakázek v doménách vyhrazených pro příklady (RFC 2606)
-ALLOWED_EMAILS = {"jmeno@firma.cz"}
+ALLOWED_EMAILS = {"jmeno@firma.cz", "name@company.com"}
 EXAMPLE_DOMAIN = re.compile(r"@example\.(com|org|net)$")
 MAX_FILE_MB = 25
 
@@ -124,12 +124,15 @@ def version_assets(out: Path) -> str:
     """Ke skriptům, stylům a datům doplní ?v=… – po nasazení se tak vždy načte ucelená nová verze."""
     v = short_hash(list((out / "js").glob("*.js")) + list((out / "css").glob("*.css")))
     dv = short_hash([out / "data" / "expertiza.json"])
+    en = out / "data" / "expertiza.en.json"
+    dv_en = short_hash([en]) if en.exists() else v
     spec = re.compile(r"""((?:from\s+|import\(\s*)(['"]))(\./[\w.-]+\.js)\2""")
     for f in (out / "js").glob("*.js"):
         s = f.read_text(encoding="utf-8")
         s = spec.sub(lambda m: f"{m.group(1)}{m.group(3)}?v={v}{m.group(2)}", s)
         s = s.replace("new URL('./pow-worker.js', import.meta.url)", f"new URL('./pow-worker.js?v={v}', import.meta.url)")
         s = s.replace("'data/expertiza.json'", f"'data/expertiza.json?v={dv}'")
+        s = s.replace("'data/expertiza.en.json'", f"'data/expertiza.en.json?v={dv_en}'")
         f.write_text(s, encoding="utf-8", newline="\n")
     idx = out / "index.html"
     html = idx.read_text(encoding="utf-8")
@@ -157,6 +160,23 @@ def check_public_data(out: Path, public_emails: set) -> None:
             extra = {e.lower() for e in EMAIL_RE.findall(f.read_text(encoding="utf-8")) if not EXAMPLE_DOMAIN.search(e.lower())} - allowed
             if extra:
                 fail(f"soubor {f.relative_to(out)} obsahuje neočekávané e-maily: {', '.join(sorted(extra))}")
+
+
+def translation_status(out: Path) -> str:
+    """Kolik položek katalogu nemá aktuální anglický překlad (web pak ukáže český text)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import preklad_katalogu as pk
+    en_file = out / "data" / "expertiza.en.json"
+    if not en_file.exists():
+        return "chybí soubor expertiza.en.json – web ukáže český text"
+    cs = json.loads((out / "data" / "expertiza.json").read_text(encoding="utf-8"))
+    en = json.loads(en_file.read_text(encoding="utf-8"))
+    s = pk.stav(cs, en)
+    chybi = sum(len(v[0]) for v in s.values())
+    stare = sum(len(v[1]) for v in s.values())
+    if not chybi and not stare:
+        return "kompletní"
+    return f"chybí {chybi}, zastaralé {stare} položek (python tools/preklad_katalogu.py stav)"
 
 
 def clean(out: Path) -> None:
@@ -215,6 +235,7 @@ def main() -> None:
     (OUT / ".nojekyll").write_text("", encoding="utf-8")
 
     check_public_data(OUT, cfg["public_emails"])
+    preklad = translation_status(OUT)
     files = [f for f in OUT.rglob("*") if f.is_file()]
     big = [f for f in files if f.stat().st_size > MAX_FILE_MB * 1024 * 1024]
     if big:
@@ -228,6 +249,7 @@ def main() -> None:
         print("  režim: UKÁZKOVÝ – poptávky zůstávají v prohlížeči (napojení viz SUPABASE.md)")
     print("  indexace vyhledávači: " + ("povolena" if args.indexovat else "zakázána (testovací provoz)"))
     print("  náhled odkazu (Open Graph): " + (site if site else "relativní adresy (doplňte --url)"))
+    print("  anglická verze katalogu: " + preklad)
 
 
 if __name__ == "__main__":

@@ -252,7 +252,7 @@ export function viewRequests() {
           <tbody>${rows.map((r) => `<tr class="${r.stav === 'nova' ? 'is-new' : ''}">
             <td><button type="button" class="linklike strong" data-open="${esc(r.id)}">${esc(r.cislo)}</button>${r.vzor ? '<span class="wait">vzorová zakázka</span>' : ''}${r.zdroj && r.zdroj !== 'formular' ? `<span class="wait">${esc(ZDROJ[r.zdroj] || r.zdroj)}</span>` : ''}</td>
             <td>${esc(fmtDateTime(r.vytvoreno))}${cekaNaOdpoved(r) ? waitLabel(r) : ''}</td>
-            <td><strong>${esc(r.jmeno)}</strong>${r.organizace ? `<br><span class="muted small">${esc(r.organizace)}</span>` : ''}${r.typ_zadavatele ? `<span class="wait">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}</td>
+            <td><strong>${esc(r.jmeno)}</strong>${r.organizace ? `<br><span class="muted small">${esc(r.organizace)}</span>` : ''}${r.typ_zadavatele ? `<span class="wait">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.jazyk === 'en' ? '<span class="wait">anglicky</span>' : ''}</td>
             <td>${esc(truncate(r.popis, 110))}${r.nda ? ` <span class="badge tone-progress">NDA</span>` : ''}</td>
             <td>${r.pocet_priloh ? `${icon('clip', 16)} ${r.pocet_priloh}` : '<span class="muted">–</span>'}</td>
             <td>${badge(r.stav)}${r.hodnota ? `<span class="wait">${esc(kc(r.hodnota))}</span>` : ''}${r.spoluprace ? '<span class="wait">zájem o další spolupráci</span>' : ''}</td></tr>`).join('')}</tbody></table></div>`
@@ -281,13 +281,13 @@ export function viewRequests() {
 function exportCsv(list) {
   const cols = [['cislo', 'Číslo'], ['vytvoreno', 'Přijato'], ['zdroj', 'Zdroj'], ['stav', 'Stav'], ['typ_zadavatele', 'Typ zadavatele'],
     ['jmeno', 'Jméno'], ['organizace', 'Organizace'], ['email', 'E-mail'], ['telefon', 'Telefon'],
-    ['nda', 'NDA'], ['pracoviste', 'Předáno pracovišti'], ['predano_kdy', 'Předáno dne'], ['prvni_odpoved', 'První odpověď'],
+    ['jazyk', 'Jazyk'], ['nda', 'NDA'], ['pracoviste', 'Předáno pracovišti'], ['predano_kdy', 'Předáno dne'], ['prvni_odpoved', 'První odpověď'],
     ['garant', 'Garant'], ['role_fakulty', 'Role fakulty'], ['hodnota', 'Hodnota (Kč bez DPH)'], ['typ_smlouvy', 'Typ smlouvy'],
     ['cislo_smlouvy', 'Číslo smlouvy'], ['duvod', 'Důvod nerealizace'], ['spokojenost', 'Spokojenost (1–5)'], ['zpetna_vazba', 'Zpětná vazba'],
     ['spoluprace', 'Zájem o další spolupráci'], ['kontakty_spoluprace', 'Kontakty pro další spolupráci'],
     ['pocet_priloh', 'Soubory'], ['popis', 'Poptávka'], ['poznamka', 'Interní poznámky']];
   const maps = { stav: Object.fromEntries(Object.entries(STAVY).map(([k, v]) => [k, v.label])), typ_zadavatele: TYP_ZAD, zdroj: ZDROJ,
-    typ_smlouvy: SMLOUVY, duvod: DUVODY, role_fakulty: ROLE };
+    typ_smlouvy: SMLOUVY, duvod: DUVODY, role_fakulty: ROLE, jazyk: { cs: 'čeština', en: 'angličtina' } };
   const val = (r, k) => {
     if (maps[k]) return maps[k][r[k]] || r[k] || '';
     if (['vytvoreno', 'predano_kdy'].includes(k)) return fmtDateTime(r[k]);
@@ -318,6 +318,7 @@ function requestMails(r, deptName) {
     `Zadavatel: ${r.jmeno}${r.organizace ? ` (${r.organizace})` : ''}${r.typ_zadavatele ? ` – ${TYP_ZAD[r.typ_zadavatele]}` : ''}`,
     `E-mail: ${r.email}`,
     r.telefon ? `Telefon: ${r.telefon}` : null,
+    r.jazyk === 'en' ? 'Zadavatel komunikuje anglicky (poptávka z anglické verze webu).' : null,
     '', 'Text poptávky:', popis,
     r.pocet_priloh ? `\nPřílohy (${r.pocet_priloh}) jsou uložené v administraci FSv Problem Hub, na požádání je přepošlu.` : null,
   ].filter((x) => x !== null).join('\n');
@@ -325,14 +326,25 @@ function requestMails(r, deptName) {
   const short = r.popis.length > 600 ? `${r.popis.slice(0, 600)}… (zkráceno – celé znění pošlu na požádání)` : r.popis;
   const dalsi = deptName ? `Předali jsme ji pracovišti ${deptName}, které se Vám ozve a upřesní zadání.`
     : 'Hledáme pro ni vhodné pracoviště – jakmile ho najdeme, ozve se Vám a upřesní zadání.';
+  const en = r.jazyk === 'en';
+  const signEn = `Kind regards\n\n${c.name}\nCoordinator, FSv Problem Hub\nFaculty of Civil Engineering, Czech Technical University in Prague\n${c.email}`;
+  const dalsiEn = deptName ? 'We have passed it on to the relevant department of the faculty, which will contact you to clarify the details.'
+    : 'We are looking for the right department – once we have found it, it will contact you to clarify the details.';
   return {
-    reply: mailto([r.email], `Vaše poptávka ${r.cislo} – Fakulta stavební ČVUT`,
-      `Dobrý den,\n\nděkujeme za Vaši poptávku č. ${r.cislo}. ${dalsi}\n`
-      + `Poptávka je nezávazná; cenu a podmínky uvede pracoviště v nabídce.\n\n${sign}`),
-    decline: mailto([r.email], `Vaše poptávka ${r.cislo} – Fakulta stavební ČVUT`,
-      `Dobrý den,\n\nděkujeme za Vaši poptávku č. ${r.cislo}. Bohužel ji tentokrát nemůžeme převzít – [doplňte důvod, např. téma je mimo `
-      + `zaměření fakulty nebo pracoviště nemá v požadovaném termínu kapacitu].\n\n[Případně doporučte jiný postup nebo kontakt.]\n\n`
-      + `Děkujeme za důvěru a budeme rádi, když se na nás obrátíte znovu.\n\n${sign}`),
+    reply: en ? mailto([r.email], `Your enquiry ${r.cislo} – Faculty of Civil Engineering, CTU in Prague`,
+      `Dear ${r.jmeno},\n\nThank you for your enquiry no. ${r.cislo}. ${dalsiEn}\n`
+      + `The enquiry is non-binding; the department will state the price and terms in its quotation.\n\n${signEn}`)
+      : mailto([r.email], `Vaše poptávka ${r.cislo} – Fakulta stavební ČVUT`,
+        `Dobrý den,\n\nděkujeme za Vaši poptávku č. ${r.cislo}. ${dalsi}\n`
+        + `Poptávka je nezávazná; cenu a podmínky uvede pracoviště v nabídce.\n\n${sign}`),
+    decline: en ? mailto([r.email], `Your enquiry ${r.cislo} – Faculty of Civil Engineering, CTU in Prague`,
+      `Dear ${r.jmeno},\n\nThank you for your enquiry no. ${r.cislo}. Unfortunately, we are unable to take it on this time – [state the reason, `
+      + `e.g. the topic is outside the faculty's scope or the department has no capacity in the required time frame].\n\n`
+      + `[If appropriate, suggest another course of action or contact.]\n\nThank you for your interest – we would be glad to hear from you again.\n\n${signEn}`)
+      : mailto([r.email], `Vaše poptávka ${r.cislo} – Fakulta stavební ČVUT`,
+        `Dobrý den,\n\nděkujeme za Vaši poptávku č. ${r.cislo}. Bohužel ji tentokrát nemůžeme převzít – [doplňte důvod, např. téma je mimo `
+        + `zaměření fakulty nebo pracoviště nemá v požadovaném termínu kapacitu].\n\n[Případně doporučte jiný postup nebo kontakt.]\n\n`
+        + `Děkujeme za důvěru a budeme rádi, když se na nás obrátíte znovu.\n\n${sign}`),
     handover: (to) => mailto(to, `Poptávka ${r.cislo} z FSv Problem Hub`,
       `Dobrý den,\n\ndo FSv Problem Hub přišla poptávka, která odpovídá vaší expertíze. Můžete se prosím zadavateli ozvat?\n\n${facts(short)}\n\n`
       + (r.nda ? 'Zadavatel požaduje nejprve dohodu o mlčenlivosti – přílohy a podrobnosti předám až po jejím uzavření.\n\n' : '')
@@ -389,7 +401,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
   openDialog(`<div class="req-detail">
     <p class="eyebrow">${r.vzor ? 'Vzorová zakázka' : 'Poptávka'} ${esc(r.cislo)} · ${esc(fmtDateTime(r.vytvoreno))} · ${esc(ZDROJ[r.zdroj] || 'formulář')}</p>
     <h2 id="dlg-title">${esc(r.jmeno)}${r.organizace ? ` <span class="muted">(${esc(r.organizace)})</span>` : ''}</h2>
-    <p class="badge-row">${badge(r.stav)}${r.typ_zadavatele ? ` <span class="badge tone-info">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.nda ? ' <span class="badge tone-progress">Požaduje NDA – přílohy předat až po jejím uzavření</span>' : ''}${r.hodnota ? ` <span class="badge tone-real">${esc(kc(r.hodnota))} bez DPH</span>` : ''}</p>
+    <p class="badge-row">${badge(r.stav)}${r.typ_zadavatele ? ` <span class="badge tone-info">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.jazyk === 'en' ? ' <span class="badge tone-info">Anglicky – odpovídat anglicky</span>' : ''}${r.nda ? ' <span class="badge tone-progress">Požaduje NDA – přílohy předat až po jejím uzavření</span>' : ''}${r.hodnota ? ` <span class="badge tone-real">${esc(kc(r.hodnota))} bez DPH</span>` : ''}</p>
     ${stepper(r.stav, r.duvod)}
     <div class="req-text">${esc(r.popis).replace(/\n/g, '<br>')}</div>
     <div class="req-cols">

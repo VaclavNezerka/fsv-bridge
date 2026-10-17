@@ -143,6 +143,7 @@ alter table public.poptavky add column if not exists termin text not null defaul
 alter table public.poptavky add column if not exists nda boolean not null default false;       -- důvěrné, nejdřív NDA
 alter table public.poptavky add column if not exists klic uuid;                                 -- ochrana proti dvojímu odeslání
 alter table public.poptavky add column if not exists zdroj text not null default 'formular';   -- formular / email / telefon / osobne / jine
+alter table public.poptavky add column if not exists jazyk text not null default 'cs';         -- jazyk webu při odeslání (cs / en)
 -- evidence zakázky (vyplňuje koordinátor)
 alter table public.poptavky add column if not exists prvni_odpoved timestamptz;                -- lhůta se měří k první odpovědi
 alter table public.poptavky add column if not exists predano_kdy timestamptz;
@@ -166,6 +167,8 @@ alter table public.poptavky drop constraint if exists poptavky_typ_check;
 alter table public.poptavky add constraint poptavky_typ_check check (typ_zadavatele in ('', 'firma', 'verejna', 'soukroma'));
 alter table public.poptavky drop constraint if exists poptavky_termin_check;
 alter table public.poptavky add constraint poptavky_termin_check check (termin in ('', 'mesic', 'ctvrtleti', 'pozdeji', 'nevim'));
+alter table public.poptavky drop constraint if exists poptavky_jazyk_check;
+alter table public.poptavky add constraint poptavky_jazyk_check check (jazyk in ('cs', 'en'));
 alter table public.poptavky drop constraint if exists poptavky_zdroj_check;
 alter table public.poptavky add constraint poptavky_zdroj_check check (zdroj in ('formular', 'email', 'telefon', 'osobne', 'jine'));
 alter table public.poptavky drop constraint if exists poptavky_role_check;
@@ -585,6 +588,7 @@ declare
   v_typ     text := coalesce(p ->> 'typ_zadavatele', '');
   v_termin  text := coalesce(p ->> 'termin', '');
   v_nda     boolean := coalesce(p ->> 'nda', '') = 'true';
+  v_jazyk   text := case when p ->> 'jazyk' = 'en' then 'en' else 'cs' end;
   v_klic    text := lower(coalesce(p ->> 'klic', ''));
   v_spam    boolean := coalesce(p ->> 'web', '') <> '';
   v_nazev   text := '';
@@ -687,9 +691,9 @@ begin
   -- 4) uložení (vyplněné skryté pole nebo překročený limit → karanténa, robot se to nedozví)
   v_cislo := private.nove_cislo();
   insert into public.poptavky (cislo, popis, nabidka_id, nabidka_nazev, jmeno, email, telefon, organizace,
-                               typ_zadavatele, termin, nda, klic, stav)
+                               typ_zadavatele, termin, nda, jazyk, klic, stav)
     values (v_cislo, v_popis, v_nab, coalesce(v_nazev, ''), v_jmeno, v_email, v_tel, v_org,
-            v_typ, v_termin, v_nda, nullif(v_klic, '')::uuid, case when v_spam or v_karant then 'spam' else 'nova' end)
+            v_typ, v_termin, v_nda, v_jazyk, nullif(v_klic, '')::uuid, case when v_spam or v_karant then 'spam' else 'nova' end)
     returning prilohy_slozka into v_slozka;
   return jsonb_build_object('cislo', v_cislo, 'slozka', v_slozka);
 end;

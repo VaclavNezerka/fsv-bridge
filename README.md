@@ -4,6 +4,7 @@ Webová aplikace, přes kterou firmy a instituce z praxe najdou odborníky Fakul
 
 - **Pro zadavatele:** prohlédne si přehled expertízy pracovišť a realizované výzkumné projekty. Pak popíše, co potřebuje (poptávka se neváže na konkrétní téma), případně přiloží soubory a odešle. Nemusí se registrovat ani vyplňovat CAPTCHA a zpravidla do 10 pracovních dnů se mu ozve koordinátor.
 - **Pro koordinátora (správce):** jako jediný pracuje pod heslem a s dvoufázovým ověřením. Vidí poptávky a zakázky se stavem rozpracovanosti, kontakty a přílohy, předává je pracovištím, ke každé zakázce ukládá vlastní dokumenty, hodnotu, poznámky, zpětnou vazbu a kontakty pro další spolupráci a upravuje přehled expertízy a projektů.
+- **Česky i anglicky:** veřejná část má anglickou verzi, přepíná se vlajkou vpravo nahoře vedle zámku Admin. Administrace je česká.
 
 Návrh, ochrana proti robotům a právní kontrolní seznam jsou v [KONCEPT.md](KONCEPT.md), napojení na databázi v [SUPABASE.md](SUPABASE.md).
 
@@ -15,17 +16,20 @@ src/                         web: HTML, CSS a JavaScript bez knihoven a bez sest
   css/app.css                vzhled v barvách ČVUT
   js/config.js               nastavení: databáze, koordinátor, lhůta odpovědi, pověřenec
   js/app.js                  směrování a rozvržení
-  js/public.js               přehled expertízy, projekty, formulář poptávky, právní informace
+  js/i18n.js                 jazyk webu (čeština / angličtina), přepínač s vlajkou, slovník pevných textů
+  js/public.js               přehled expertízy, projekty, formulář poptávky, právní informace (česky i anglicky)
   js/admin.js                administrace: poptávky, expertíza, reference, pracoviště, účet
   js/api.js                  datová vrstva (Supabase, nebo ukázkový režim v prohlížeči)
   js/demo-vzory.js           tři vzorové zakázky pro ukázkový režim
   js/pow.js, pow-worker.js   neviditelná ochrana proti robotům
   data/expertiza.json        veřejný přehled expertízy a projektů (bez kontaktů pracovníků)
+  data/expertiza.en.json     anglický překlad přehledu (doplňuje české položky podle id)
   img/exp/                   fotografie z podkladů pracovišť
   img/og.png                 náhled odkazu pro e-mail a sociální sítě
 supabase/schema.sql          databáze, pravidla přístupu a úložiště souborů
 supabase/seed.sql            katalog včetně interních kontaktů – jen lokálně, není v repozitáři
 tools/import_expertiza.py    převod podkladů pracovišť (DOCX, ZIP) do katalogu
+tools/preklad_katalogu.py    stav, export a sloučení anglického překladu katalogu
 tools/foto-cache.json        mezipaměť převodu fotografií (zrychluje import)
 tools/serve.py               lokální náhled
 tools/heslo_spravce.py       heslo správce pro ukázkový režim (do kódu se uloží jen otisk)
@@ -79,11 +83,29 @@ Příkaz přegeneruje `src/data/expertiza.json`, fotografie, `supabase/seed.sql`
 
 Po napojení na databázi se katalog upravuje v administraci a import slouží jen k doplnění nových podkladů. Identifikátory položek (a tím i adresy stránek) vznikají z názvů – názvy už zveřejněných položek proto měňte v administraci, ne v podkladech.
 
+## Anglická verze
+
+Veřejná část webu je česky a anglicky. Jazyk se přepíná vlajkou vpravo nahoře a prohlížeč si volbu pamatuje. Při první návštěvě se jazyk řídí nastavením prohlížeče (čeština a slovenština → česky, jinak anglicky). Odkaz s `?lang=en` (např. `https://UCET.github.io/fsv-problem-hub/?lang=en`) otevře web rovnou anglicky.
+
+- **Texty aplikace:** každý text v kódu má obě znění, `L('česky', 'English')`. Pevné texty stránky (záhlaví, zápatí) jsou ve slovníku v `src/js/i18n.js`. Anglické právní informace jsou překladem pro informaci, při rozporu platí české znění (web to u nich uvádí).
+- **Administrace** zůstává česká. Poptávka odeslaná z anglické verze má v administraci štítek „Anglicky“ a šablony odpovědi i odmítnutí jsou v angličtině. Informace je také v souhrnu pro pracoviště a v exportu CSV.
+- **Katalog:** anglická pole jsou v `src/data/expertiza.en.json` a web je doplňuje do českého katalogu podle id položky. Co přeložené není, ukáže anglická verze česky. Pracoviště a obory mají oficiální anglické názvy fakulty (`PRACOVISTE` a `KATEGORIE` v `tools/preklad_katalogu.py`).
+- **Údržba překladu:** každá přeložená položka nese otisk českého textu, ze kterého vznikla. Když se český text změní, `build.py` ji ohlásí jako zastaralou (web do aktualizace ukazuje předchozí anglický text). Postup:
+
+  ```bash
+  python tools/preklad_katalogu.py stav
+  python tools/preklad_katalogu.py export k-prekladu.json
+  python tools/preklad_katalogu.py merge prelozeno.json
+  ```
+
+  `export` uloží česká pole položek bez aktuálního překladu, přeložený soubor se stejnou strukturou (jména osob beze změny) doplní příkaz `merge`. Po napojení na databázi přidejte před příkaz `--katalog publish/data/expertiza.json`, aby se překlad porovnával s aktuálním katalogem z databáze (soubor vytvoří `python build.py`).
+
 ## Kde co upravit
 
 - **Kontakt koordinátora, lhůta odpovědi, pověřenec, datum prohlášení o přístupnosti, pruh „Testovací verze“:** `src/js/config.js`
 - **Výchozí heslo správce v ukázkovém režimu:** `python tools/heslo_spravce.py`, pak `git commit -am "Heslo správce"` a `git push`
 - **Vlastní údaje, heslo a další správci:** v administraci v záložce **Účet**
-- **Právní informace** (zpracování osobních údajů, podmínky, přístupnost): objekt `DOCS` v `src/js/public.js`
+- **Právní informace** (zpracování osobních údajů, podmínky, přístupnost): objekt `DOCS` v `src/js/public.js`, česky i anglicky
+- **Anglické texty webu:** druhý argument `L('…', '…')` v `src/js/*.js`, slovník pevných textů v `src/js/i18n.js`; anglický katalog viz [Anglická verze](#anglická-verze)
 - **Barvy a písmo:** proměnné v `:root` v `src/css/app.css`
 - **Témata expertízy, projekty, pracoviště:** v administraci webu

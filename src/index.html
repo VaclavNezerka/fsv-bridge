@@ -25,7 +25,7 @@
 <script type="module" src="js/app.js"></script>
 </head>
 <body>
-<a class="skip" href="#main" data-action="skip">Přeskočit na obsah</a>
+<a class="skip" href="#main" data-action="skip" data-i18n="skip">Přeskočit na obsah</a>
 
 <div class="test-banner" id="banner" role="note" hidden>
   <div class="wrap"><strong id="banner-title">Testovací verze.</strong> <span id="banner-text"></span></div>
@@ -33,25 +33,26 @@
 
 <header class="site-header">
   <div class="wrap header-row">
-    <a class="brand" href="#/" aria-label="FSv Problem Hub – úvodní stránka">
+    <a class="brand" href="#/" aria-label="FSv Problem Hub – úvodní stránka" data-i18n-aria="home">
       <svg class="brand-mark" viewBox="0 0 64 64" width="44" height="44" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="10" fill="#0065BD"/><path d="M10 44h44M14 44l8-18 8 18 8-18 8 18 8-18" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 26h32" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="34" cy="35" r="5" fill="#F2A900"/></svg>
-      <span class="brand-text"><strong>Fakulta stavební ČVUT v Praze</strong><span>Problem Hub <em>spolupráce s praxí</em></span></span>
+      <span class="brand-text"><strong><span class="brand-long" data-i18n="faculty">Fakulta stavební ČVUT v Praze</span><span class="brand-short" data-i18n="facultyShort">FSv ČVUT</span></strong><span>Problem Hub <em data-i18n="tagline">spolupráce s praxí</em></span></span>
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav">
       <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-      Menu
+      <span class="nav-label">Menu</span>
     </button>
-    <nav class="nav" id="nav" aria-label="Hlavní navigace" data-open="false">
+    <nav class="nav" id="nav" aria-label="Hlavní navigace" data-i18n-aria="mainNav" data-open="false">
       <ul>
-        <li><a href="#/nabidka">Co umíme</a></li>
-        <li><a href="#/reference">Realizované projekty</a></li>
-        <li class="nav-cta"><a href="#/poptavka">Zadat poptávku</a></li>
+        <li><a href="#/nabidka" data-i18n="navOffer">Co umíme</a></li>
+        <li><a href="#/reference" data-i18n="navRefs">Realizované projekty</a></li>
+        <li class="nav-cta"><a href="#/poptavka" data-i18n="navRequest">Zadat poptávku</a></li>
       </ul>
     </nav>
-    <a class="admin-link" href="#/admin" title="Administrace pro správce">
+    <a class="admin-link" href="#/admin" title="Administrace pro správce" data-i18n-title="adminTitle">
       <svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
       <span>Admin</span>
     </a>
+    <button type="button" class="lang-switch" id="lang-switch"></button>
   </div>
 </header>
 
@@ -63,43 +64,43 @@
   <div class="wrap footer-grid">
     <div>
       <h2>FSv Problem Hub</h2>
-      <p>Jednotné místo pro spolupráci praxe s Fakultou stavební ČVUT v Praze – přehled expertízy pracovišť a poptávkový formulář.</p>
-      <p>Fakulta stavební ČVUT v Praze<br>Thákurova 2077/7, 166 29 Praha 6<br>
+      <p data-i18n="footAbout">Jednotné místo pro spolupráci praxe s Fakultou stavební ČVUT v Praze – přehled expertízy pracovišť a poptávkový formulář.</p>
+      <p><span data-i18n-html="footAddress">Fakulta stavební ČVUT v Praze<br>Thákurova 2077/7, 166 29 Praha 6</span><br>
         <a href="https://www.fsv.cvut.cz" rel="noopener">fsv.cvut.cz</a> · <a href="https://www.cvut.cz" rel="noopener">cvut.cz</a></p>
     </div>
     <div>
-      <h2>Pro zadavatele</h2>
+      <h2 data-i18n="footClients">Pro zadavatele</h2>
       <ul>
-        <li><a href="#/nabidka">Co umíme</a></li>
-        <li><a href="#/reference">Realizované projekty</a></li>
-        <li><a href="#/poptavka">Zadat poptávku</a></li>
+        <li><a href="#/nabidka" data-i18n="navOffer">Co umíme</a></li>
+        <li><a href="#/reference" data-i18n="navRefs">Realizované projekty</a></li>
+        <li><a href="#/poptavka" data-i18n="navRequest">Zadat poptávku</a></li>
       </ul>
     </div>
     <div>
-      <h2>Informace</h2>
+      <h2 data-i18n="footInfo">Informace</h2>
       <ul>
-        <li><a href="#/osobni-udaje">Ochrana osobních údajů</a></li>
-        <li><a href="#/podminky">Podmínky</a></li>
-        <li><a href="#/pristupnost">Prohlášení o přístupnosti</a></li>
-        <li><a href="#/admin">Pro správce</a></li>
+        <li><a href="#/osobni-udaje" data-i18n="footPrivacy">Ochrana osobních údajů</a></li>
+        <li><a href="#/podminky" data-i18n="footTerms">Podmínky</a></li>
+        <li><a href="#/pristupnost" data-i18n="footA11y">Prohlášení o přístupnosti</a></li>
+        <li><a href="#/admin" data-i18n="footAdmin">Pro správce</a></li>
       </ul>
     </div>
   </div>
   <div class="wrap footer-bottom">
-    <span>© <span id="year">2026</span> České vysoké učení technické v Praze, Fakulta stavební</span>
-    <span>Vzniklo v projektu ČVUT PPSŘ 03 (klíčová aktivita KA4) · Bez cookies a sledovacích nástrojů</span>
+    <span>© <span id="year">2026</span> <span data-i18n="footOrg">České vysoké učení technické v Praze, Fakulta stavební</span></span>
+    <span data-i18n="footNote">Vzniklo v projektu ČVUT PPSŘ 03 (klíčová aktivita KA4) · Bez cookies a sledovacích nástrojů</span>
   </div>
 </footer>
 
 <dialog id="dlg" aria-labelledby="dlg-title">
   <div class="dlg-inner">
-    <button type="button" class="dlg-close" aria-label="Zavřít">
+    <button type="button" class="dlg-close" aria-label="Zavřít" data-i18n-aria="close">
       <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
     <div id="dlg-body"></div>
   </div>
 </dialog>
 
-<noscript><div class="wrap page"><p>Pro použití FSv Problem Hub je potřeba povolit JavaScript.</p></div></noscript>
+<noscript><div class="wrap page"><p>Pro použití FSv Problem Hub je potřeba povolit JavaScript.</p><p lang="en">Please enable JavaScript to use FSv Problem Hub.</p></div></noscript>
 </body>
 </html>

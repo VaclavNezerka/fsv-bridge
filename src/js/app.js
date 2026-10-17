@@ -3,6 +3,7 @@ import { CONFIG, LIVE } from './config.js';
 import { api, errorMessage } from './api.js';
 import { $, $$, esc, icon, toast, ss, initDialog, closeDialog, watchTypo } from './util.js';
 import * as P from './public.js';
+import { L, lang, setLang, applyStatic, switchHtml } from './i18n.js';
 
 const main = $('#main');
 let current = { hash: null };
@@ -30,7 +31,7 @@ async function resolve({ seg, params, raw }) {
     case 'osobni-udaje': case 'podminky': case 'pristupnost': return P.viewDoc(a);
     case 'admin': {
       // GitHub Pages neumí hlavičku frame-ancestors – administraci ve vloženém rámu (clickjacking) nevykreslíme
-      if (window.top !== window.self) return P.viewNotFound('Administraci lze otevřít jen přímo, ne ve vloženém okně.');
+      if (window.top !== window.self) return P.viewNotFound(L('Administraci lze otevřít jen přímo, ne ve vloženém okně.', 'The administration can only be opened directly, not in an embedded window.'));
       const adm = await loadAdmin();
       const st = await api.adminStatus().catch(() => null);
       if (!st?.admin) return adm.viewLogin(b ? raw : '#/admin/poptavky');
@@ -140,9 +141,9 @@ function initGlobalEvents() {
     } else if (el.matches('[data-copy]')) {
       try {
         await navigator.clipboard.writeText(el.dataset.copy);
-        toast('Zkopírováno do schránky.', 'ok');
+        toast(L('Zkopírováno do schránky.', 'Copied to clipboard.'), 'ok');
       } catch {
-        toast('Kopírování se nezdařilo – číslo si prosím opište.');
+        toast(L('Kopírování se nezdařilo – číslo si prosím opište.', 'Copying failed – please note the number down.'));
       }
     } else if (el.matches('[data-admin]')) {
       (await loadAdmin()).adminAction(el.dataset.admin);
@@ -175,28 +176,51 @@ async function handleAuthLink() {
   }
 }
 
-async function boot() {
-  initDialog();
-  initGlobalEvents();
-  watchTypo(main);
-  watchTypo($('#dlg-body'));
+function setBanner() {
   const banner = $('#banner');
   if (!LIVE) {
     banner.hidden = false;
-    $('#banner-text').textContent = 'Ukázkový režim – poptávky se nikam neodesílají a zůstávají jen ve vašem prohlížeči.';
+    $('#banner-title').textContent = L('Testovací verze.', 'Test version.');
+    $('#banner-text').textContent = L('Ukázkový režim – poptávky se nikam neodesílají a zůstávají jen ve vašem prohlížeči.', 'Demo mode – enquiries are not sent anywhere and stay in your browser only.');
   } else if (CONFIG.testBanner) {
     banner.hidden = false;
-    $('#banner-title').textContent = 'Zkušební provoz:';
-    $('#banner-text').textContent = 'poptávky přijímáme a vyřizujeme, katalog ještě doplňujeme.';
+    $('#banner-title').textContent = L('Zkušební provoz:', 'Pilot operation:');
+    $('#banner-text').textContent = L('poptávky přijímáme a vyřizujeme, katalog ještě doplňujeme.', 'we accept and handle enquiries; the catalogue is still being completed.');
   }
+}
+
+/** Přepínač čeština / angličtina (vlajka vpravo nahoře): přeloží pevné texty, katalog i aktuální stránku. */
+function initLangSwitch() {
+  const btn = $('#lang-switch');
+  const paint = () => { btn.innerHTML = switchHtml(); btn.title = L('English version', 'Česká verze'); };
+  paint();
+  btn.addEventListener('click', async () => {
+    setLang(lang === 'en' ? 'cs' : 'en');
+    applyStatic();
+    paint();
+    setBanner();
+    try { P.setCatalog(await api.catalog()); } catch (e) { toast(errorMessage(e), 'err'); }
+    await render(false);
+    window.scrollTo(0, 0);
+  });
+}
+
+async function boot() {
+  initDialog();
+  initGlobalEvents();
+  applyStatic();
+  initLangSwitch();
+  watchTypo(main);
+  watchTypo($('#dlg-body'));
+  setBanner();
   $('#year').textContent = String(new Date().getFullYear());
   await handleAuthLink();
   try {
     P.setCatalog(await api.catalog());
   } catch (e) {
-    main.innerHTML = `<div class="wrap page narrow"><div class="card"><h1>Katalog se nepodařilo načíst</h1>
-      <p>${esc(errorMessage(e))}</p><p>Poptávku můžete poslat e-mailem na <a href="mailto:${esc(CONFIG.coordinator.email)}">${esc(CONFIG.coordinator.email)}</a>.</p>
-      <p><button type="button" class="btn btn-primary" id="retry">${icon('arrow', 18)} Zkusit znovu</button></p></div></div>`;
+    main.innerHTML = `<div class="wrap page narrow"><div class="card"><h1>${L('Katalog se nepodařilo načíst', 'The catalogue could not be loaded')}</h1>
+      <p>${esc(errorMessage(e))}</p><p>${L('Poptávku můžete poslat e-mailem na', 'You can send your enquiry by email to')} <a href="mailto:${esc(CONFIG.coordinator.email)}">${esc(CONFIG.coordinator.email)}</a>.</p>
+      <p><button type="button" class="btn btn-primary" id="retry">${icon('arrow', 18)} ${L('Zkusit znovu', 'Try again')}</button></p></div></div>`;
     $('#retry').addEventListener('click', () => location.reload());
     return;
   }

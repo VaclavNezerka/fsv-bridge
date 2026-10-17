@@ -23,6 +23,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 - **Jeden kontakt.** Veřejně se zobrazují jména garantů a jejich oblast. E-maily a telefony pracovníků zná jen koordinátor, takže poptávky neobcházejí evidenci.
 - **Důvěrnost.** Poptávky, kontaktní údaje a přílohy vidí jen správce a pracoviště, kterému je předá. Nic z toho se nezveřejňuje. Zadavatel může nejdřív požádat o dohodu o mlčenlivosti.
 - **Bez překážek.** Formulář nemá CAPTCHA ani povinnou registraci. Rozepsaná poptávka se průběžně ukládá v prohlížeči (do zavření okna) a chyby se ukazují v souhrnu i u jednotlivých polí.
+- **Česky i anglicky.** Veřejná část má anglickou verzi pro zahraniční firmy a výzkumné partnery. Přepíná se vlajkou vpravo nahoře vedle zámku Admin a lze na ni odkazovat adresou s `?lang=en`. Odborné texty používají britskou angličtinu a oficiální anglické názvy pracovišť. Administrace zůstává česká, poptávky z anglické verze jsou v ní označené a šablony odpovědí jsou anglicky.
 - **Přístupnost a mobilní zobrazení.** Cílem je WCAG 2.1 AA: ovládání klávesnicí, popisky polí, kontrast, alternativní texty a respektování omezení animací. Web funguje od šířky 360 px.
 - **Vizuální styl ČVUT.** Modrá ČVUT (#0065BD) a písmo Technika s náhradním systémovým písmem. Oficiální logo se doplní podle manuálu vizuální identity.
 - **Moderní a přitom jednoduchá technika.** Web je statický, bez knihoven a sestavovacích nástrojů. Používá nativní ES moduly, `<dialog>`, View Transitions, Web Workers a Web Crypto. Data a přihlášení zajišťuje Supabase (PostgreSQL v EU).
@@ -36,6 +37,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 | Realizované projekty | `#/reference`, `#/reference/<id>` | Výzkumné a vývojové projekty: co bylo potřeba, co fakulta vyvinula, přínos. Zakázkové reference se nezveřejňují |
 | Zadat poptávku | `#/poptavka`, `#/odeslano` | Formulář na jedné stránce. Výsledkem je číslo poptávky (např. PH-2026-0001) a popis dalšího postupu |
 | Právní informace | `#/osobni-udaje`, `#/podminky`, `#/pristupnost` | Návrhy textů k posouzení |
+| Anglická verze | `?lang=en#/…` (vlajka vpravo nahoře) | Všechny veřejné stránky v angličtině, volba jazyka se pamatuje v prohlížeči |
 | Administrace | `#/admin/…` (zámek „Admin“ vpravo nahoře) | Poptávky a zakázky, expertíza, reference, pracoviště a účet (vlastní údaje, změna hesla, další správci, dvoufázové ověření) |
 
 ## 5. Ochrana proti robotům bez CAPTCHA
@@ -82,6 +84,7 @@ Kdyby spam přesto pronikal, lze doplnit Cloudflare Turnstile. Jde o neviditelno
 - **Pracoviště:** kód a název.
 - **Témata expertízy:** název, popis, zaměření, výsledky, garanti, klíčová slova, fotografie. Interní pole jsou kontakty a zdrojový dokument.
 - **Reference:** zadavatel, co bylo potřeba, co jsme dodali, přínos, fotografie.
+- **Anglický překlad:** samostatný soubor `expertiza.en.json` s anglickými poli témat, projektů, popisků fotografií, oborů a pracovišť. Každá položka nese otisk českého textu, takže sestavení pozná, kde je překlad zastaralý. Nepřeložená položka se v anglické verzi ukáže česky.
 
 Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele z praxe) importér do katalogu vůbec nepřebírá – web ukazuje jen výzkumné a vývojové projekty (rozhodnutí z 16. 10. 2026, přepínač `ZAKAZKOVE_REFERENCE` v `tools/import_expertiza.py`).
 
@@ -94,6 +97,7 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 | Jméno a příjmení, e-mail | ano | kontrola formátu v prohlížeči i v databázi |
 | Telefon, organizace | ne | |
 | Kdo poptává, dohoda o mlčenlivosti | ne | upřesnění pro koordinátora |
+| *Jazyk:* čeština / angličtina | – | podle verze webu, ze které poptávka přišla; řídí jazyk šablon odpovědi |
 | *Interní:* stav, pracoviště, garant, poznámka, historie stavů | – | vyplňuje koordinátor |
 | *Evidence zakázky:* první odpověď, role fakulty, hodnota, typ a číslo smlouvy, důvod nerealizace | – | pro vykazování a úspěšnost |
 | *Dokumenty zakázky:* nabídka, smlouva, NDA, protokoly, korespondence | – | nahrává koordinátor, interní |
@@ -130,6 +134,7 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 | Reference | Zveřejňují se jen výzkumné a vývojové projekty; zakázkové reference s údaji objednatelů a cen se nepřebírají. | – |
 | Pravidla veřejné podpory (Rámec EU pro VaVaI, 2022/C 414/01) | Služby a smluvní výzkum se poskytují za tržních podmínek a sjednávají smlouvou. | Ceníky pracovišť. |
 | Zák. č. 121/2000 Sb. (autorský zákon) a GDPR u fotografií | Fotografie dodala pracoviště pro prezentaci své expertízy. | Ověřit, že pracoviště mají práva k fotografiím, a souhlas rozpoznatelných osob na nich. |
+| Jazykové verze | Anglické právní informace jsou překladem pro informaci; při rozporu platí české znění, což stránky uvádějí. | Posoudit anglické znění spolu s českým. |
 | Vizuální identita ČVUT | Barvy a textové označení. Testovací verze je zřetelně označená a není indexovaná vyhledávači. | Logo a písmo Technika podle manuálu, konzultace s PR. |
 
 ## 9. Testovací provoz
@@ -145,10 +150,11 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 2. Posouzení pověřencem a právním oddělením. Doplnit kontakt pověřence a potvrdit právní základ a dobu uložení.
 3. Kontrola přehledu expertízy pracovišti, viz `tools/import-report.md`:
    - české překlady tří referencí K134, které byly dodány jen anglicky,
+   - anglický překlad přehledu a projektů (odborné termíny, názvy přístrojů a partnerů),
    - aktuálnost textů, garantů a fotografií.
 4. Vizuální identita a začlenění do vnějšího webu fakulty ve spolupráci s PR. Případně vlastní doména, např. `problemhub.fsv.cvut.cz`.
 5. Audit přístupnosti a zveřejnění finálního prohlášení.
-6. Volitelně přihlášení správců přes ČVUT SSO, anglická verze a napojení na evidenci smluv.
+6. Volitelně přihlášení správců přes ČVUT SSO a napojení na evidenci smluv.
 
 ## 11. Parametry k potvrzení
 

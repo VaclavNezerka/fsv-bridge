@@ -123,6 +123,12 @@ TEXT_FIXES = {
     "Ředitelství silnic a dálnic ČR a.s.": "Ředitelství silnic a dálnic ČR",
     "Přijímací zkoušky „NANEČISTO“": "Přijímací zkoušky nanečisto",
     "jízdní soupravy....)": "jízdní soupravy…)", "a další..... )": "a další)", "památková zóny": "památkové zóny", "staveních konstrukcí": "stavebních konstrukcí",
+    # body nabídky K134 (lepené spoje) jsou v podkladu anglicky – česká verze webu je česky (17. 10. 2026)
+    "Static and dynamic testing of adhesive joints at ambient and elevated temperatures up to 150°C.":
+        "Statické a dynamické zkoušky lepených spojů za běžné a zvýšené teploty až do 150 °C",
+    "Laboratory ageing of adhesive joints and verification of the material properties of adhesives.":
+        "Laboratorní stárnutí lepených spojů a ověření materiálových vlastností lepidel",
+    "Surface preparation and wettability assessment.": "Příprava povrchu a hodnocení smáčivosti",
 }
 
 
@@ -134,7 +140,7 @@ def clean(s):
     s = re.sub(r"(?<=\S) - (?=\S)", " – ", s)  # spojovník s mezerami jako pomlčka
     for wrong, right in TEXT_FIXES.items():  # až po sjednocení mezer; i v názvech psaných verzálkami
         s = s.replace(wrong, right).replace(wrong.upper(), right.upper())
-    return s
+    return re.sub(r"\s*\($", "", s)  # nedokončená závorka na konci (např. „Prohlídky stavebně technického stavu (“)
 
 
 def vlastni_laborator(lab, dept):

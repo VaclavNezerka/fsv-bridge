@@ -3,6 +3,7 @@
 // Ukázkový režim: vše jen v prohlížeči (localStorage + IndexedDB pro přílohy).
 import { CONFIG, LIVE, DEMO_ADMIN } from './config.js';
 import { ss } from './util.js';
+import { L, lang } from './i18n.js';
 
 export class ApiError extends Error {
   constructor(code, message, status = 0) {
@@ -32,14 +33,14 @@ export const ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'docx',
 export function validateRequest(d) {
   const e = {};
   const t = (k) => String(d[k] ?? '').trim();
-  if (t('popis').length < 20) e.popis = 'Popište prosím, co potřebujete – alespoň jednou dvěma větami (min. 20 znaků).';
-  else if (t('popis').length > 5000) e.popis = 'Popis může mít nejvýše 5 000 znaků. Podrobnosti můžete přiložit jako soubor.';
-  if (t('jmeno').length < 2) e.jmeno = 'Zadejte své jméno a příjmení.';
-  else if (t('jmeno').length > 120) e.jmeno = 'Jméno může mít nejvýše 120 znaků.';
-  if (!t('email')) e.email = 'Zadejte e-mail, na který se vám ozveme.';
-  else if (!EMAIL_RE.test(t('email')) || t('email').length > 200) e.email = 'Zadejte e-mail ve tvaru jmeno@firma.cz.';
-  if (t('telefon') && !/^\+?[\d ()/-]{9,20}$/.test(t('telefon'))) e.telefon = 'Zadejte telefon ve tvaru +420 123 456 789.';
-  if (t('organizace').length > 200) e.organizace = 'Název organizace může mít nejvýše 200 znaků.';
+  if (t('popis').length < 20) e.popis = L('Popište prosím, co potřebujete – alespoň jednou dvěma větami (min. 20 znaků).', 'Please describe what you need in a sentence or two (at least 20 characters).');
+  else if (t('popis').length > 5000) e.popis = L('Popis může mít nejvýše 5 000 znaků. Podrobnosti můžete přiložit jako soubor.', 'The description can be up to 5,000 characters. You can attach further details as a file.');
+  if (t('jmeno').length < 2) e.jmeno = L('Zadejte své jméno a příjmení.', 'Please enter your full name.');
+  else if (t('jmeno').length > 120) e.jmeno = L('Jméno může mít nejvýše 120 znaků.', 'The name can be up to 120 characters.');
+  if (!t('email')) e.email = L('Zadejte e-mail, na který se vám ozveme.', 'Please enter the email address we should reply to.');
+  else if (!EMAIL_RE.test(t('email')) || t('email').length > 200) e.email = L('Zadejte e-mail ve tvaru jmeno@firma.cz.', 'Please enter an email address such as name@company.com.');
+  if (t('telefon') && !/^\+?[\d ()/-]{9,20}$/.test(t('telefon'))) e.telefon = L('Zadejte telefon ve tvaru +420 123 456 789.', 'Please enter the phone number in a format such as +420 123 456 789.');
+  if (t('organizace').length > 200) e.organizace = L('Název organizace může mít nejvýše 200 znaků.', 'The organization name can be up to 200 characters.');
   return e;
 }
 
@@ -81,7 +82,25 @@ export function errorMessage(e) {
     posledni_spravce: 'Musí zůstat alespoň jeden správce.',
     ucet_neexistuje: 'Účet s tímto e-mailem zatím neexistuje. Vytvořte ho v Supabase (Authentication → Users → Invite user) a pak ho přidejte zde.',
   };
-  return map[code] || e?.message || 'Něco se nepovedlo. Zkuste to prosím znovu.';
+  const en = {
+    pow_invalid: 'Spam protection could not be verified. Please try sending your enquiry again.',
+    pow_missing: 'Spam protection could not be verified. Please try sending your enquiry again.',
+    pow_expired: 'The form was open for too long. Please try sending your enquiry again.',
+    pow_used: 'This enquiry has already been sent. Reload the page to submit another one.',
+    too_fast: 'The form was submitted too quickly. Please try again in a few seconds.',
+    rate_limit: 'Too many enquiries have been sent from your address in the last hour. Please try again later.',
+    rate_limit_global: 'The form is currently overloaded. Please try again later or send us your enquiry by email.',
+    spam: 'Your enquiry could not be sent.',
+    invalid_popis: 'Please check the description of your enquiry (20 to 5,000 characters).',
+    invalid_jmeno: 'Please check your name.',
+    invalid_email: 'Please check your email address.',
+    invalid_input: 'Please check the phone number (e.g. +420 123 456 789) and the organization name.',
+    timeout: 'The server did not respond in time. Please try again.',
+    network: 'Could not connect to the server. Please check your connection and try again.',
+    catalog: 'The catalogue could not be loaded. Please check your connection and try again.',
+  };
+  if (lang === 'en' && en[code]) return en[code];
+  return map[code] || e?.message || L('Něco se nepovedlo. Zkuste to prosím znovu.', 'Something went wrong. Please try again.');
 }
 
 const randomHex = (n) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => b.toString(16).padStart(2, '0')).join('');
@@ -195,13 +214,51 @@ async function loadBase() {
     try {
       res = await fetch('data/expertiza.json', timeout(15000));
     } catch {
-      throw new ApiError('network', 'Katalog se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.');
+      throw new ApiError('network', L('Katalog se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.', 'The catalogue could not be loaded. Please check your connection and try again.'));
     }
-    if (!res.ok) throw new ApiError('catalog', 'Katalog se nepodařilo načíst.');
+    if (!res.ok) throw new ApiError('catalog', L('Katalog se nepodařilo načíst.', 'The catalogue could not be loaded.'));
     baseCatalog = await res.json();
   }
   return baseCatalog;
 }
+// Anglický překlad katalogu (data/expertiza.en.json): přeložená pole podle id; co přeložené není, zůstane česky.
+let enCatalog = null;
+async function loadEn() {
+  if (!enCatalog) {
+    try {
+      const res = await fetch('data/expertiza.en.json', timeout(15000));
+      enCatalog = res.ok ? await res.json() : {};
+    } catch { enCatalog = {}; }
+  }
+  return enCatalog;
+}
+export function localize(full, en) {
+  const by = (list, key = 'id') => new Map((list || []).map((x) => [x[key], x]));
+  const kat = by(en.kategorie);
+  const dep = by(en.pracoviste, 'kod');
+  const nab = by(en.nabidky);
+  const ref = by(en.reference);
+  const merge = (x, t) => {
+    if (!t) return x;
+    const o = { ...x };
+    for (const [k, v] of Object.entries(t)) {
+      if (k === 'id' || k === 'h' || v == null || v === '') continue;
+      if (k === 'garanti') o.garanti = (x.garanti || []).map((g, i) => ({ ...g, oblast: v[i]?.oblast || g.oblast }));
+      else if (k === 'foto') o.foto = (x.foto || []).map((f, i) => ({ ...f, popis: v[i]?.popis ?? f.popis }));
+      else o[k] = v;
+    }
+    return o;
+  };
+  return {
+    ...full,
+    kategorie: (full.kategorie || []).map((k) => ({ ...k, nazev: kat.get(k.id)?.nazev || k.nazev })),
+    pracoviste: (full.pracoviste || []).map((p) => ({ ...p, nazev: dep.get(p.kod)?.nazev || p.nazev })),
+    nabidky: (full.nabidky || []).map((n) => merge(n, nab.get(n.id))),
+    reference: (full.reference || []).map((r) => merge(r, ref.get(r.id))),
+  };
+}
+const inLang = async (full) => (lang === 'en' ? localize(full, await loadEn()) : full);
+
 async function demoFull() {
   const base = await loadBase();
   const saved = store.get(LS.catalog);
@@ -226,7 +283,7 @@ function newDemoRequest(d, kdo) {
     popis: t('popis'), nabidka_id: null, nabidka_nazev: '', jmeno: t('jmeno'), // poptávka se na téma z přehledu neváže
     email: t('email').toLowerCase(), telefon: t('telefon'), organizace: t('organizace'),
     typ_zadavatele: ['firma', 'verejna', 'soukroma'].includes(d.typ_zadavatele) ? d.typ_zadavatele : '',
-    nda: d.nda === true || d.nda === 'true',
+    nda: d.nda === true || d.nda === 'true', jazyk: d.jazyk === 'en' ? 'en' : 'cs',
     klic: d.klic || null, zdroj: d.zdroj || 'formular', prilohy_slozka: crypto.randomUUID(), stav: d.stav || 'nova',
     pracoviste: null, poznamka: '', prvni_odpoved: null, predano_kdy: null, garant: '', role_fakulty: '', hodnota: null,
     typ_smlouvy: '', cislo_smlouvy: '', duvod: '', spokojenost: null, zpetna_vazba: '', spoluprace: false, kontakty_spoluprace: '',
@@ -236,7 +293,7 @@ function newDemoRequest(d, kdo) {
 
 const demo = {
   mode: 'demo',
-  async catalog() { return publicView(await demoFull()); },
+  async catalog() { return publicView(await inLang(await demoFull())); },
   async challenge() {
     const now = Math.floor(Date.now() / 1000);
     const salt = randomHex(12) + `?expires=${now + 1800}&iat=${now}`;
@@ -465,7 +522,7 @@ async function raw(path, { method = 'GET', body, auth = true, prefer, headers = 
   try {
     res = await fetch(SB + path, { method, headers: h, body: payload, ...timeout(25000) });
   } catch {
-    throw new ApiError('network', 'Nepodařilo se spojit se serverem. Zkontrolujte připojení a zkuste to znovu.');
+    throw new ApiError('network', L('Nepodařilo se spojit se serverem. Zkontrolujte připojení a zkuste to znovu.', 'Could not connect to the server. Please check your connection and try again.'));
   }
   const text = await res.text();
   let json = null;
@@ -533,7 +590,7 @@ const live = {
   mode: 'live',
   _adminCat: null,
   _adminAt: 0,
-  async catalog() { return publicView(await loadBase()); },
+  async catalog() { return publicView(await inLang(await loadBase())); },
   challenge() { return rpc('pow_challenge', {}, { auth: false }); },
   submit(data, pow) { return rpc('submit_request', { p: data, pow }, { auth: false }); },
   upload(slozka, file, name, onProgress) {
