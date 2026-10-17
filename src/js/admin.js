@@ -19,7 +19,6 @@ export const STAVY = {
 const KVALIFIKOVANE = ['predano', 'nabidka', 'realizace', 'dokonceno'];
 const UZAVRENE = ['dokonceno', 'nerealizovano', 'spam'];
 const TYP_ZAD = { firma: 'Firma / organizace', verejna: 'Veřejná instituce / obec', soukroma: 'Soukromá osoba' };
-const TERMIN = { mesic: 'do měsíce', ctvrtleti: 'do 3 měsíců', pozdeji: 'později', nevim: 'zatím neví' };
 const ZDROJ = { formular: 'formulář', email: 'e-mail', telefon: 'telefon', osobne: 'osobně', jine: 'jinak' };
 const SMLOUVY = { sod: 'Smlouva o dílo', smluvni_vyzkum: 'Smluvní výzkum', licence: 'Licenční smlouva', spolecny_projekt: 'Společný projekt', jine: 'Jiná' };
 const DUVODY = { cena: 'Cena', termin: 'Termín', kapacita: 'Kapacita pracoviště', mimo_zamereni: 'Mimo zaměření fakulty',
@@ -273,10 +272,10 @@ export function viewRequests() {
 function exportCsv(list) {
   const cols = [['cislo', 'Číslo'], ['vytvoreno', 'Přijato'], ['zdroj', 'Zdroj'], ['stav', 'Stav'], ['typ_zadavatele', 'Typ zadavatele'],
     ['jmeno', 'Jméno'], ['organizace', 'Organizace'], ['email', 'E-mail'], ['telefon', 'Telefon'],
-    ['termin', 'Termín'], ['nda', 'NDA'], ['pracoviste', 'Předáno pracovišti'], ['predano_kdy', 'Předáno dne'], ['prvni_odpoved', 'První odpověď'],
+    ['nda', 'NDA'], ['pracoviste', 'Předáno pracovišti'], ['predano_kdy', 'Předáno dne'], ['prvni_odpoved', 'První odpověď'],
     ['garant', 'Garant'], ['role_fakulty', 'Role fakulty'], ['hodnota', 'Hodnota (Kč bez DPH)'], ['typ_smlouvy', 'Typ smlouvy'],
     ['cislo_smlouvy', 'Číslo smlouvy'], ['duvod', 'Důvod nerealizace'], ['pocet_priloh', 'Přílohy'], ['popis', 'Poptávka'], ['poznamka', 'Interní poznámka']];
-  const maps = { stav: Object.fromEntries(Object.entries(STAVY).map(([k, v]) => [k, v.label])), typ_zadavatele: TYP_ZAD, termin: TERMIN, zdroj: ZDROJ,
+  const maps = { stav: Object.fromEntries(Object.entries(STAVY).map(([k, v]) => [k, v.label])), typ_zadavatele: TYP_ZAD, zdroj: ZDROJ,
     typ_smlouvy: SMLOUVY, duvod: DUVODY, role_fakulty: ROLE };
   const val = (r, k) => {
     if (maps[k]) return maps[k][r[k]] || r[k] || '';
@@ -307,7 +306,6 @@ function requestMails(r, deptName) {
     `Zadavatel: ${r.jmeno}${r.organizace ? ` (${r.organizace})` : ''}${r.typ_zadavatele ? ` – ${TYP_ZAD[r.typ_zadavatele]}` : ''}`,
     `E-mail: ${r.email}`,
     r.telefon ? `Telefon: ${r.telefon}` : null,
-    r.termin ? `Termín: ${TERMIN[r.termin]}` : null,
     '', 'Text poptávky:', popis,
     r.pocet_priloh ? `\nPřílohy (${r.pocet_priloh}) jsou uložené v administraci FSv Problem Hub, na požádání je přepošlu.` : null,
   ].filter((x) => x !== null).join('\n');
@@ -357,7 +355,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
   openDialog(`<div class="req-detail">
     <p class="eyebrow">Poptávka ${esc(r.cislo)} · ${esc(fmtDateTime(r.vytvoreno))} · ${esc(ZDROJ[r.zdroj] || 'formulář')}</p>
     <h2 id="dlg-title">${esc(r.jmeno)}${r.organizace ? ` <span class="muted">(${esc(r.organizace)})</span>` : ''}</h2>
-    <p class="badge-row">${badge(r.stav)}${r.typ_zadavatele ? ` <span class="badge tone-info">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.termin ? ` <span class="badge tone-muted">Termín: ${esc(TERMIN[r.termin])}</span>` : ''}${r.nda ? ' <span class="badge tone-progress">Požaduje NDA – přílohy předat až po jejím uzavření</span>' : ''}</p>
+    <p class="badge-row">${badge(r.stav)}${r.typ_zadavatele ? ` <span class="badge tone-info">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.nda ? ' <span class="badge tone-progress">Požaduje NDA – přílohy předat až po jejím uzavření</span>' : ''}</p>
     <div class="req-text">${esc(r.popis).replace(/\n/g, '<br>')}</div>
     <div class="req-cols">
       <section><h3>Kontakt</h3><ul class="contact">

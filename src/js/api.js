@@ -190,7 +190,7 @@ function newDemoRequest(d, kdo) {
     popis: t('popis'), nabidka_id: null, nabidka_nazev: '', jmeno: t('jmeno'), // poptávka se na téma z přehledu neváže
     email: t('email').toLowerCase(), telefon: t('telefon'), organizace: t('organizace'),
     typ_zadavatele: ['firma', 'verejna', 'soukroma'].includes(d.typ_zadavatele) ? d.typ_zadavatele : '',
-    termin: ['mesic', 'ctvrtleti', 'pozdeji', 'nevim'].includes(d.termin) ? d.termin : '', nda: d.nda === true || d.nda === 'true',
+    nda: d.nda === true || d.nda === 'true',
     klic: d.klic || null, zdroj: d.zdroj || 'formular', prilohy_slozka: crypto.randomUUID(), stav: d.stav || 'nova',
     pracoviste: null, poznamka: '', prvni_odpoved: null, predano_kdy: null, garant: '', role_fakulty: '', hodnota: null,
     typ_smlouvy: '', cislo_smlouvy: '', duvod: '', historie: [{ kdy: now, stav: d.stav || 'nova', kdo }],
@@ -418,7 +418,7 @@ const OFFER_COLS = ['id', 'pracoviste', 'kategorie', 'nazev', 'popis', 'anotace'
 const REF_COLS = ['id', 'pracoviste', 'kategorie', 'nazev', 'kod', 'poskytovatel', 'resitel', 'typ', 'zamereni', 'obdobi', 'potreba',
   'dodali', 'prinos', 'klicovy_prinos', 'vice', 'odkaz', 'jazyk', 'druh', 'souhlas', 'foto', 'zverejneno', 'poradi', 'zdroj'];
 // sloupce poptávky, které smí správce měnit (shodně s oprávněními v schema.sql)
-const REQ_COLS = ['stav', 'pracoviste', 'poznamka', 'jmeno', 'email', 'telefon', 'organizace', 'popis', 'typ_zadavatele', 'termin', 'nda',
+const REQ_COLS = ['stav', 'pracoviste', 'poznamka', 'jmeno', 'email', 'telefon', 'organizace', 'popis', 'typ_zadavatele', 'nda',
   'prvni_odpoved', 'garant', 'role_fakulty', 'hodnota', 'typ_smlouvy', 'cislo_smlouvy', 'duvod'];
 const pick = (o, cols) => Object.fromEntries(cols.filter((c) => o[c] !== undefined).map((c) => [c, o[c]]));
 

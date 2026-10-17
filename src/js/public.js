@@ -11,6 +11,8 @@ const dept = (kod) => state.catalog.pracoviste.find((p) => p.kod === kod);
 const deptName = (kod) => dept(kod)?.nazev || kod || '';
 const kat = (id) => state.catalog.kategorie.find((k) => k.id === id);
 const offerById = (id) => state.catalog.nabidky.find((n) => n.id === id);
+// laboratoř či tým jen tehdy, když neopakuje název pracoviště (např. „ČVUT v Praze, Fakulta stavební, Katedra geomatiky“)
+const labName = (n) => (n.laborator && !norm(n.laborator).includes(norm(deptName(n.pracoviste))) ? n.laborator : '');
 const refById = (id) => state.catalog.reference.find((r) => r.id === id);
 // Upraví adresu bez nového záznamu v historii – jen dokud je uživatel na stejné stránce
 // (zpožděné vyhledávání nesmí přepsat adresu stránky, na kterou mezitím přešel).
@@ -326,7 +328,7 @@ export function viewOffer(id) {
         ${k ? `<a href="#/nabidka?k=${encodeURIComponent(k.id)}">${esc(k.nazev)}</a><span aria-hidden="true">›</span>` : ''}<span aria-current="page">${esc(truncate(n.nazev, 60))}</span></nav>
       <div class="detail-grid">
         <article class="detail-main">
-          <p class="eyebrow">${esc(deptName(n.pracoviste))}${n.laborator ? ' · ' + esc(n.laborator) : ''}</p>
+          <p class="eyebrow">${esc(deptName(n.pracoviste))}${labName(n) ? ' · ' + esc(labName(n)) : ''}</p>
           <h1>${esc(n.nazev)}</h1>
           ${n.popis ? `<p class="lead">${esc(n.popis)}</p>` : ''}
           ${gallery(n.foto, n.nazev)}
@@ -449,7 +451,6 @@ export function viewReference(id) {
 const DRAFT_KEY = 'ph-poptavka'; // jen v sessionStorage: koncept s osobními údaji zmizí se zavřením prohlížeče
 const FIELDS = ['popis', 'jmeno', 'email', 'telefon', 'organizace'];
 const TYPY = [['firma', 'Firma nebo organizace'], ['verejna', 'Veřejná instituce nebo obec'], ['soukroma', 'Soukromá osoba']];
-const TERMINY = [['', 'Neuvedeno'], ['mesic', 'Do měsíce'], ['ctvrtleti', 'Do 3 měsíců'], ['pozdeji', 'Později'], ['nevim', 'Zatím nevím']];
 
 function fieldHtml(id, label, { type = 'text', req = false, hint = '', auto = '', max = 0, inputmode = '' } = {}) {
   return `<div class="field" data-field="${id}"><label for="f-${id}">${esc(label)}${req ? ' <span class="req" aria-hidden="true">*</span>' : ' <span class="opt">(nepovinné)</span>'}</label>
@@ -492,8 +493,6 @@ export function viewRequest() {
               <span class="label">Poptáváte jako</span>
               ${TYPY.map(([v, l]) => `<label class="radio"><input type="radio" name="typ" value="${v}"> ${esc(l)}</label>`).join('')}
             </div>
-            <div class="field-inline"><label for="f-termin">Kdy to potřebujete?</label>
-              <select id="f-termin" name="termin">${TERMINY.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('')}</select></div>
             <label class="check-inline"><input type="checkbox" name="nda"> Podrobnosti jsou důvěrné – nejdřív chci dohodu o mlčenlivosti</label>
           </fieldset>
           <fieldset class="field group"><legend>Na koho se máme obrátit</legend>
@@ -535,7 +534,6 @@ export function viewRequest() {
       const draft = (() => { try { return JSON.parse(ss.get(DRAFT_KEY)) || {}; } catch { return {}; } })();
       FIELDS.forEach((k) => { if (draft[k]) form.elements[k].value = draft[k]; });
       if (draft.typ) form.elements.typ.value = draft.typ;
-      if (draft.termin) form.elements.termin.value = draft.termin;
       form.elements.nda.checked = !!draft.nda;
       // z neúspěšného hledání v přehledu expertízy přeneseme hledaný výraz jako začátek popisu
       const pre = ss.get('ph-prefill');
@@ -543,7 +541,7 @@ export function viewRequest() {
 
       const saveDraft = () => {
         const d = Object.fromEntries(FIELDS.map((k) => [k, form.elements[k].value]));
-        Object.assign(d, { typ: form.elements.typ.value, termin: form.elements.termin.value, nda: form.elements.nda.checked });
+        Object.assign(d, { typ: form.elements.typ.value, nda: form.elements.nda.checked });
         ss.set(DRAFT_KEY, JSON.stringify(d));
       };
       const counter = () => {
@@ -604,7 +602,7 @@ export function viewRequest() {
 
       counter();
       form.addEventListener('focusin', startPow, { once: true });
-      form.addEventListener('input', (e) => { if ([...FIELDS, 'typ', 'termin', 'nda'].includes(e.target.name)) { saveDraft(); if (e.target.name === 'popis') counter(); } });
+      form.addEventListener('input', (e) => { if ([...FIELDS, 'typ', 'nda'].includes(e.target.name)) { saveDraft(); if (e.target.name === 'popis') counter(); } });
       form.addEventListener('change', (e) => { if (e.target.id === 'f-files') { addFiles(Array.from(e.target.files)); e.target.value = ''; } });
       root.addEventListener('click', (e) => {
         const rm = e.target.closest('[data-remove]');
@@ -639,7 +637,7 @@ export function viewRequest() {
           setProgress('Odesíláme poptávku…', 0.25);
           const payload = {
             ...data, web: form.elements.web.value, klic,
-            typ_zadavatele: form.elements.typ.value || '', termin: form.elements.termin.value, nda: form.elements.nda.checked,
+            typ_zadavatele: form.elements.typ.value || '', nda: form.elements.nda.checked,
           };
           let res;
           try {
@@ -731,7 +729,7 @@ export const DOCS = {
       <p>Údaje potřebujeme, abychom vám mohli odpovědět, posoudit vaši poptávku a případně připravit nabídku spolupráce.</p>
       <h2>Správce</h2><p>České vysoké učení technické v Praze, Jugoslávských partyzánů 1580/3, 160 00 Praha 6, IČO 68407700. Zpracování zajišťuje Fakulta stavební, Thákurova 2077/7, 166 29 Praha 6.
       Koordinátor: ${esc(CONFIG.coordinator.name)}, <a href="mailto:${esc(CONFIG.coordinator.email)}">${esc(CONFIG.coordinator.email)}</a>. Pověřenec pro ochranu osobních údajů ČVUT: <a href="mailto:${esc(CONFIG.dpo)}">${esc(CONFIG.dpo)}</a>.</p>
-      <h2>Jaké údaje zpracováváme</h2><ul><li>jméno a příjmení, e-mail, případně telefon a název organizace,</li><li>text poptávky, přílohy a nepovinná upřesnění (kdo poptává, termín, požadavek na mlčenlivost),</li><li>pro ochranu před zneužitím krátkodobě otisk (hash) IP adresy – mažeme jej automaticky nejpozději do 24 hodin.</li></ul>
+      <h2>Jaké údaje zpracováváme</h2><ul><li>jméno a příjmení, e-mail, případně telefon a název organizace,</li><li>text poptávky, přílohy a nepovinná upřesnění (kdo poptává, požadavek na mlčenlivost),</li><li>pro ochranu před zneužitím krátkodobě otisk (hash) IP adresy – mažeme jej automaticky nejpozději do 24 hodin.</li></ul>
       <h2>Účel a právní základ</h2><p>Údaje zpracováváme k vyřízení poptávky a k jednání o případné smlouvě. Poptáváte-li sami za sebe, je právním základem jednání o smlouvě (čl. 6 odst. 1 písm. b) GDPR). Jste-li kontaktní osobou organizace, je jím náš oprávněný zájem odpovědět na poptávku a jednat o spolupráci (čl. 6 odst. 1 písm. f) GDPR). Bez jména a e-mailu poptávku vyřídit nelze. Obchodní sdělení vám nezasíláme.</p>
       <h2>Kdo údaje uvidí</h2><p>Poptávku, kontaktní údaje a přílohy vidí koordinátor a pracoviště, které poptávku vyřizuje, v nezbytném rozsahu také kontrolní orgány projektu, z něhož je Problem Hub financován. Nic z toho nezveřejňujeme.</p>
       <h2>Zpracovatelé a předání mimo EU</h2><p>Poptávky a přílohy ukládáme u poskytovatele databázové služby Supabase, Inc. v datovém centru v EU (Frankfurt nad Mohanem). Web je hostován službou GitHub Pages (GitHub, Inc.), která při zobrazení stránek zpracovává IP adresy návštěvníků v technických záznamech; technické záznamy s IP adresami vede i poskytovatel databáze. Oba poskytovatelé sídlí v USA, předání údajů zajišťují záruky podle kapitoly V GDPR (standardní smluvní doložky, případně rámec ochrany osobních údajů EU–USA).</p>

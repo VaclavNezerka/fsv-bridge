@@ -484,13 +484,12 @@ table.data a:hover, table.data .linklike:hover { text-decoration: underline; }
 .options { display: grid; gap: 12px; }
 .radio-row { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
 .radio-row .label { width: 100%; font-weight: 600; }
-.options .radio-row .label { font-size: .86rem; font-weight: 650; color: var(--ink-2); margin: 0; } /* jako popisek „Kdy to potřebujete?“ */
+.options .radio-row .label { font-size: .86rem; font-weight: 650; color: var(--ink-2); margin: 0; } /* jako popisky ostatních polí */
 .radio { display: inline-flex; gap: 6px; align-items: center; font-size: .95rem; }
 /* přepínače a zaškrtávátka uvnitř .field nesmí převzít vzhled textových polí (šířka 100 %, rámeček) */
 .field .radio, .field .check-inline { display: inline-flex; gap: 8px; align-items: center; margin: 0; font-weight: 500; }
 .field .check-inline { align-items: flex-start; padding-bottom: 0; }
 .field input[type="radio"], .field input[type="checkbox"] { width: 20px; height: 20px; flex: none; margin: 2px 0 0; padding: 0; border: 0; accent-color: var(--blue-800); }
-.options .field-inline { max-width: 340px; }
 .dropzone.disabled { color: var(--muted); background: var(--line-2); border-style: solid; }
 .contact-card p { margin: 0 0 6px; }
 /* administrace: detail poptávky */

@@ -18,7 +18,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 
 ## 3. Principy návrhu
 
-- **Co nejjednodušší pro zadavatele.** Zadavatel popíše, co potřebuje, a zadá jméno a e-mail. Telefon, organizace, přílohy a upřesnění (kdo poptává, termín, požadavek na dohodu o mlčenlivosti) jsou nepovinné. Nemusí znát strukturu fakulty ani odborné termíny, poptávku přiřadí koordinátor.
+- **Co nejjednodušší pro zadavatele.** Zadavatel popíše, co potřebuje, a zadá jméno a e-mail. Telefon, organizace, přílohy a upřesnění (kdo poptává, požadavek na dohodu o mlčenlivosti) jsou nepovinné. Nemusí znát strukturu fakulty ani odborné termíny, poptávku přiřadí koordinátor.
 - **Přehled expertízy jen pro orientaci.** „Co umíme“ není katalog služeb k objednání: zadavatel nevybírá konkrétní téma ani dovednost, popíše svůj problém a vhodné pracoviště vybere koordinátor. Vyhledávání nebere ohled na diakritiku a tvary slov, filtruje se podle oboru a pracoviště. Když hledání nic nenajde, nabídne web zadání poptávky s hledaným výrazem.
 - **Jeden kontakt.** Veřejně se zobrazují jména garantů a jejich oblast. E-maily a telefony pracovníků zná jen koordinátor, takže poptávky neobcházejí evidenci.
 - **Důvěrnost.** Poptávky, kontaktní údaje a přílohy vidí jen správce a pracoviště, kterému je předá. Nic z toho se nezveřejňuje. Zadavatel může nejdřív požádat o dohodu o mlčenlivosti.
@@ -93,7 +93,7 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 | Přílohy | ne | nejvýše 5 souborů po 10 MB (PDF, Office, obrázky, DWG/DXF/IFC, TXT/CSV) |
 | Jméno a příjmení, e-mail | ano | kontrola formátu v prohlížeči i v databázi |
 | Telefon, organizace | ne | |
-| Kdo poptává, termín, dohoda o mlčenlivosti | ne | upřesnění pro koordinátora |
+| Kdo poptává, dohoda o mlčenlivosti | ne | upřesnění pro koordinátora |
 | *Interní:* stav, pracoviště, garant, poznámka, historie stavů | – | vyplňuje koordinátor |
 | *Evidence zakázky:* první odpověď, role fakulty, hodnota, typ a číslo smlouvy, důvod nerealizace | – | pro vykazování a úspěšnost |
 

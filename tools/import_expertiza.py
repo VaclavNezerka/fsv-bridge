@@ -137,6 +137,14 @@ def clean(s):
     return s
 
 
+def vlastni_laborator(lab, dept):
+    """Laboratoř/tým jen tehdy, když neopakuje fakultu a pracoviště – ty web u tématu ukazuje sám."""
+    zbytek = norm_key(lab)  # bez zkratek v závorce, např. „(LPVT)“
+    for cast in ("české vysoké učení technické v praze", "čvut v praze", "čvut", "fakulta stavební", norm_key(PRACOVISTE[dept][0])):
+        zbytek = zbytek.replace(cast, " ")
+    return lab if re.search(r"\w{3,}", zbytek) else ""
+
+
 def norm_key(s):
     s = clean(s).lower()
     s = re.sub(r"\(.*?\)", "", s)
@@ -1125,7 +1133,7 @@ def main():
                         "id": oid, "pracoviste": dept, "kategorie": next((v for p, v in KAT_PODLE_OBSAHU.items() if oid.startswith(p)), kat),
                         "nazev": o["nazev"], "popis": o["popis"],
                         "anotace": o["anotace"][:20], "vysledky": o.get("vysledky", []), "garanti": garanti, "kontakty": kontakty,
-                        "klicova_slova": o["klicova_slova"], "horizon": o["horizon"], "laborator": o["laborator"],
+                        "klicova_slova": o["klicova_slova"], "horizon": o["horizon"], "laborator": vlastni_laborator(o["laborator"], dept),
                         "vystupy": o["vystupy"], "formy": o["formy"], "web": o["web"], "foto": foto,
                         "zverejneno": not hidden, "poradi": len(nabidky) + 1, "zdroj": vrel,
                     })
