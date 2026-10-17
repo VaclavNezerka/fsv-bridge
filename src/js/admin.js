@@ -4,7 +4,7 @@ import { api, errorMessage, ANONYM, ALLOWED_EXT, DOCS_DIR, safeFileName } from '
 import { $, $$, esc, icon, toast, go, ss, openDialog, closeDialog, confirmDialog, fmtDate, fmtDateTime, fileSize, truncate, norm, debounce, downloadBlob, plural, safeUrl } from './util.js';
 import { setCatalog } from './public.js';
 
-// Cesta poptávky od přijetí ke smlouvě – stavy slouží i k vykazování (KPI 4, úspěšnost).
+// Cesta poptávky od přijetí ke smlouvě – stavy slouží i k vykazování a výpočtu úspěšnosti.
 export const STAVY = {
   nova: { label: 'Nová', tone: 'new' },
   resi_se: { label: 'Řeší se', tone: 'progress' },
@@ -15,8 +15,6 @@ export const STAVY = {
   nerealizovano: { label: 'Nerealizováno', tone: 'muted' },
   spam: { label: 'Spam / karanténa', tone: 'muted' },
 };
-// KPI 4: kvalifikované průmyslové zadání = předané pracovišti nebo dál, ne od soukromé osoby
-const KVALIFIKOVANE = ['predano', 'nabidka', 'realizace', 'dokonceno'];
 const UZAVRENE = ['dokonceno', 'nerealizovano', 'spam'];
 const TYP_ZAD = { firma: 'Firma / organizace', verejna: 'Veřejná instituce / obec', soukroma: 'Soukromá osoba' };
 const ZDROJ = { formular: 'formulář', email: 'e-mail', telefon: 'telefon', osobne: 'osobně', jine: 'jinak' };
@@ -219,7 +217,6 @@ export function viewRequests() {
         const won = count('realizace', 'dokonceno');
         const decided = won + count('nerealizovano');
         const late = real.filter(poLhute).length;
-        const kpi = list.filter((r) => KVALIFIKOVANE.includes(r.stav) && r.typ_zadavatele !== 'soukroma');
         const skart = list.filter(keSkartaci).length;
         const objem = list.filter((r) => ['realizace', 'dokonceno'].includes(r.stav)).reduce((sum, r) => sum + (Number(r.hodnota) || 0), 0);
         const spol = list.filter((r) => r.spoluprace && !anonymni(r)).length;
@@ -232,7 +229,6 @@ export function viewRequests() {
           <div class="metric"><span class="val">${real.length}</span><span class="lbl">Celkem${count('spam') ? ` · <button type="button" class="linklike" data-show="spam">${count('spam')} ve spamu</button>` : ''}</span></div>
         </div>
         ${late ? `<p class="note note-warn">${icon('clock', 20)}<span><strong>${plural(late, 'poptávka čeká', 'poptávky čekají', 'poptávek čeká')} na první odpověď déle než ${CONFIG.responseDays} pracovních dnů.</strong> <button type="button" class="linklike" data-show="lhuta">Zobrazit</button></span></p>` : ''}
-        <p class="kpi ${kpi.length ? 'ok' : 'no'}">${icon(kpi.length ? 'check' : 'info', 20)} <span><strong>KPI 4 (PPSŘ 03):</strong> kvalifikovaná průmyslová zadání (předaná pracovišti nebo dál, ne od soukromých osob): ${kpi.length}, z toho aktivních ${kpi.filter((r) => r.stav !== 'dokonceno').length}. ${kpi.length ? 'Ukazatel je splněn.' : 'Zatím bez kvalifikovaného zadání.'}${kpi.some((r) => r.vzor) ? ' (Včetně vzorových zakázek – před vykazováním je smažte.)' : ''}</span></p>
         ${spol ? `<p class="note">${icon('users', 20)}<span>${plural(spol, 'zadavatel má', 'zadavatelé mají', 'zadavatelů má')} zájem o další spolupráci. <button type="button" class="linklike" data-show="spoluprace">Zobrazit kontakty</button></span></p>` : ''}
         ${skart ? `<p class="note">${icon('info', 20)}<span>${plural(skart, 'poptávka překročila', 'poptávky překročily', 'poptávek překročilo')} dobu uchování. <button type="button" class="linklike" data-show="skartace">Zobrazit ke skartaci</button></span></p>` : ''}`;
       };
@@ -557,7 +553,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
       }
     }
     if (e.target.closest('[data-act="delete"]')) {
-      const warn = r.stav === 'spam' ? '' : ' Smazáním zmizí i doklad pro vykazování KPI – u skutečných poptávek zvažte raději anonymizaci.';
+      const warn = r.stav === 'spam' ? '' : ' Smazáním zmizí i doklad pro vykazování – u skutečných poptávek zvažte raději anonymizaci.';
       if (await confirmDialog(`Smazat poptávku ${r.cislo} včetně příloh a dokumentů? Tuto akci nelze vrátit.${warn}`, 'Smazat', true)) {
         try { await api.deleteRequest(r); closeDialog(); toast('Poptávka byla smazána.', 'ok'); await onChange(); } catch (err) { toast(errorMessage(err), 'err'); }
       }
@@ -609,7 +605,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
   } catch { /* historie je doplňková */ }
 }
 
-/** Ruční zápis poptávky, která přišla e-mailem, telefonem nebo osobně – aby se započítala do přehledu i KPI. */
+/** Ruční zápis poptávky, která přišla e-mailem, telefonem nebo osobně – aby se započítala do přehledu. */
 function openNewRequest(returnTo, onChange) {
   openDialog(`<form data-form="req-new" class="req-new" novalidate>
     <h2 id="dlg-title">Zapsat poptávku</h2>
@@ -767,7 +763,7 @@ function editor(kind, id) {
               ${text('popis', 'Úvodní popis', item.popis, { rows: 3, hint: 'Nepovinné – jedna až dvě věty pro návštěvníky webu.' })}
               ${text('anotace', 'Zaměření', (item.anotace || []).join('\n'), { rows: 8, hint: 'Každou položku napište na samostatný řádek.' })}
               ${text('vysledky', 'Doložené výsledky', (item.vysledky || []).join('\n'), { rows: 3, hint: 'Nepovinné, jedna položka na řádek.' })}
-              <fieldset class="field group"><legend>Odborní garanti</legend><p class="hint">Na webu se zobrazí jen jméno a oblast; e-mail a telefon slouží pro předání poptávek pracovišti.</p><div id="people">${peopleHtml()}</div></fieldset>
+              <fieldset class="field group"><legend>Odborní garanti <span class="opt">(interní)</span></legend><p class="hint">Na webu se garanti nezobrazují – u tématu je uvedeno jen pracoviště. Jméno, oblast, e-mail a telefon slouží koordinátorovi k předání poptávky pracovišti.</p><div id="people">${peopleHtml()}</div></fieldset>
               ${text('klicova_slova', 'Klíčová slova', (item.klicova_slova || []).join(', '), { hint: 'Oddělte čárkou. Pomáhají při vyhledávání.' })}
               <div class="grid-2">${text('laborator', 'Laboratoř / tým', item.laborator)}${text('horizon', 'Horizont Evropa', item.horizon, { hint: 'Např. Cluster 4' })}</div>
               <div class="grid-2">${text('vystupy', 'Hlavní výstupy', item.vystupy)}${text('formy', 'Formy spolupráce', item.formy)}</div>

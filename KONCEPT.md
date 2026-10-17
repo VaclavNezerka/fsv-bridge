@@ -4,7 +4,7 @@ Testovací verze, říjen 2026. Koordinátor: doc. Ing. Václav Nežerka, Ph.D.
 
 ## 1. Účel
 
-FSv Problem Hub je jedno vstupní místo, přes které firmy a instituce z praxe zadávají Fakultě stavební ČVUT konkrétní problémy a zakázky. Naplňuje klíčovou aktivitu KA4 projektu PPSŘ 03 a ukazatel **KPI 4**: fungující Problem Hub s alespoň jedním aktivním průmyslovým zadáním. Plnění KPI ukazuje přehled v administraci.
+FSv Problem Hub je jedno vstupní místo, přes které firmy a instituce z praxe zadávají Fakultě stavební ČVUT konkrétní problémy a zakázky. Naplňuje klíčovou aktivitu KA4 projektu PPSŘ 03 a ukazatel **KPI 4**: fungující Problem Hub s alespoň jedním aktivním průmyslovým zadáním. Podklady pro vykazování dává přehled poptávek a zakázek (stavy, historie, export CSV).
 
 Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, může s ním nadále jednat napřímo.
 
@@ -19,8 +19,8 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 ## 3. Principy návrhu
 
 - **Co nejjednodušší pro zadavatele.** Zadavatel popíše, co potřebuje, a zadá jméno a e-mail. Telefon, organizace, přílohy a upřesnění (kdo poptává, požadavek na dohodu o mlčenlivosti) jsou nepovinné. Nemusí znát strukturu fakulty ani odborné termíny, poptávku přiřadí koordinátor.
-- **Přehled expertízy jen pro orientaci.** „Co umíme“ není katalog služeb k objednání: zadavatel nevybírá konkrétní téma ani dovednost, popíše svůj problém a vhodné pracoviště vybere koordinátor. Vyhledávání nebere ohled na diakritiku a tvary slov, filtruje se podle oboru a pracoviště. Když hledání nic nenajde, nabídne web zadání poptávky s hledaným výrazem.
-- **Jeden kontakt.** Veřejně se zobrazují jména garantů a jejich oblast. E-maily a telefony pracovníků zná jen koordinátor, takže poptávky neobcházejí evidenci.
+- **Přehled expertízy jen pro orientaci.** „Co umíme“ není katalog služeb k objednání: zadavatel nevybírá konkrétní téma ani dovednost (detail tématu proto nemá tlačítko poptávky), popíše svůj problém a vhodné pracoviště vybere koordinátor. Vyhledávání nebere ohled na diakritiku a tvary slov, filtruje se podle oboru a pracoviště. Když hledání nic nenajde, nabídne web zadání poptávky s hledaným výrazem.
+- **Jeden kontakt.** U témat expertízy se veřejně uvádí jen pracoviště (katedra). Jména garantů a kontakty pracovníků zná jen koordinátor, takže poptávky neobcházejí evidenci.
 - **Důvěrnost.** Poptávky, kontaktní údaje a přílohy vidí jen správce a pracoviště, kterému je předá. Nic z toho se nezveřejňuje. Zadavatel může nejdřív požádat o dohodu o mlčenlivosti.
 - **Bez překážek.** Formulář nemá CAPTCHA ani povinnou registraci. Rozepsaná poptávka se průběžně ukládá v prohlížeči (do zavření okna) a chyby se ukazují v souhrnu i u jednotlivých polí.
 - **Česky i anglicky.** Veřejná část má anglickou verzi pro zahraniční firmy a výzkumné partnery. Přepíná se vlajkou vpravo nahoře vedle zámku Admin a lze na ni odkazovat adresou s `?lang=en`. Odborné texty používají britskou angličtinu a oficiální anglické názvy pracovišť. Administrace zůstává česká, poptávky z anglické verze jsou v ní označené a šablony odpovědí jsou anglicky.
@@ -33,7 +33,7 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 | Stránka | Adresa | Obsah |
 |---|---|---|
 | Úvod | `#/` | Výzva k zadání poptávky, vyhledávání, rychlé volby, obory, postup ve 3 krocích, vybrané projekty, časté dotazy |
-| Co umíme | `#/nabidka`, `#/nabidka/<id>` | Přehled expertízy s filtry. Detail tématu obsahuje zaměření, výsledky, garanty a fotografie a obecný odkaz na poptávku |
+| Co umíme | `#/nabidka`, `#/nabidka/<id>` | Přehled expertízy s filtry. Detail tématu obsahuje pracoviště, zaměření, doložené výsledky a fotografie. Konkrétní téma se nepoptává – poptávka se zadává obecně (tlačítko „Zadat poptávku“ v záhlaví) |
 | Realizované projekty | `#/reference`, `#/reference/<id>` | Výzkumné a vývojové projekty: co bylo potřeba, co fakulta vyvinula, přínos. Zakázkové reference se nezveřejňují |
 | Zadat poptávku | `#/poptavka`, `#/odeslano` | Formulář na jedné stránce. Výsledkem je číslo poptávky (např. PH-2026-0001) a popis dalšího postupu |
 | Právní informace | `#/osobni-udaje`, `#/podminky`, `#/pristupnost` | Návrhy textů k posouzení |
@@ -82,7 +82,7 @@ Kdyby spam přesto pronikal, lze doplnit Cloudflare Turnstile. Jde o neviditelno
 
 - **Oblasti expertízy:** 11 oblastí (konstrukce, materiály, budovy, …).
 - **Pracoviště:** kód a název.
-- **Témata expertízy:** název, popis, zaměření, výsledky, garanti, klíčová slova, fotografie. Interní pole jsou kontakty a zdrojový dokument.
+- **Témata expertízy:** název, popis, pracoviště, zaměření, výsledky, klíčová slova, fotografie. Interní pole (na webu se nezobrazují) jsou garanti s kontakty a zdrojový dokument.
 - **Reference:** zadavatel, co bylo potřeba, co jsme dodali, přínos, fotografie.
 - **Anglický překlad:** samostatný soubor `expertiza.en.json` s anglickými poli témat, projektů, popisků fotografií, oborů a pracovišť. Každá položka nese otisk českého textu, takže sestavení pozná, kde je překlad zastaralý. Nepřeložená položka se v anglické verzi ukáže česky.
 
@@ -103,7 +103,7 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 | *Dokumenty zakázky:* nabídka, smlouva, NDA, protokoly, korespondence | – | nahrává koordinátor, interní |
 | *Po realizaci:* spokojenost (1–5), zpětná vazba, zájem o další spolupráci, kontakty a příležitosti | – | vyhodnocení a další spolupráce |
 
-**Stavy (cesta od poptávky ke smlouvě):** Nová → Řeší se → Předáno pracovišti → Nabídka odeslána → Zakázka v realizaci → Dokončeno, případně Nerealizováno. Stav „Spam / karanténa“ slouží k odložení nevyžádaných poptávek a zachycení poptávek nad limitem. Přehled z nich počítá kvalifikovaná zadání pro KPI 4 (předaná pracovišti nebo dál, ne od soukromých osob), poptávky v jednání a úspěšnost (podíl zakázek z rozhodnutých poptávek).
+**Stavy (cesta od poptávky ke smlouvě):** Nová → Řeší se → Předáno pracovišti → Nabídka odeslána → Zakázka v realizaci → Dokončeno, případně Nerealizováno. Stav „Spam / karanténa“ slouží k odložení nevyžádaných poptávek a zachycení poptávek nad limitem. Přehled z nich počítá poptávky v jednání, úspěšnost (podíl zakázek z rozhodnutých poptávek) a objem zakázek.
 
 **Podpora koordinátora:**
 

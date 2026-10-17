@@ -3,7 +3,7 @@
 import { CONFIG, LIVE } from './config.js';
 import { api, validateRequest, safeFileName, errorMessage, ALLOWED_EXT } from './api.js';
 import * as pow from './pow.js';
-import { $, $$, esc, nl2br, norm, truncate, icon, toast, go, ss, ls, openDialog, onDialogClose, debounce, fileSize, initials, safeUrl } from './util.js';
+import { $, $$, esc, nl2br, norm, truncate, icon, toast, go, ss, ls, openDialog, onDialogClose, debounce, fileSize, safeUrl } from './util.js';
 import { L, PL, lang } from './i18n.js';
 
 export const state = { catalog: null, index: null };
@@ -32,7 +32,7 @@ function buildIndex() {
   state.index = new Map(state.catalog.nabidky.map((n) => [n.id, {
     title: norm(n.nazev),
     kw: norm([...(n.klicova_slova || []), n.horizon, kat(n.kategorie)?.nazev].join(' ')),
-    dept: norm([n.pracoviste, deptName(n.pracoviste), n.laborator, ...(n.garanti || []).map((g) => g.jmeno + ' ' + g.oblast)].join(' ')),
+    dept: norm([n.pracoviste, deptName(n.pracoviste), n.laborator, ...(n.garanti || []).map((g) => g.oblast)].join(' ')), // jména garantů web neuvádí
     body: norm([n.popis, ...(n.anotace || []), ...(n.vysledky || []), n.vystupy, n.formy].join(' ')),
   }]));
 }
@@ -344,6 +344,9 @@ export function viewOffer(id) {
   const k = kat(n.kategorie);
   const refs = state.catalog.reference.filter((r) => r.pracoviste === n.pracoviste).slice(0, 3);
   const web = safeUrl(n.web);
+  // Přehled expertízy slouží jen k orientaci: téma se nepoptává samostatně a místo jmen garantů se uvádí pracoviště.
+  const facts = [[L('Pracoviště', 'Department'), deptName(n.pracoviste) + (labName(n) ? `, ${labName(n)}` : '')], [L('Obor', 'Field'), k?.nazev],
+    [L('Hlavní výstupy', 'Main outputs'), n.vystupy], [L('Formy spolupráce', 'Forms of cooperation'), n.formy]].filter(([, v]) => v);
   return {
     title: n.nazev,
     html: `<div class="wrap page">
@@ -357,26 +360,13 @@ export function viewOffer(id) {
           ${gallery(n.foto, n.nazev)}
           ${n.anotace?.length ? `<h2>${L('Zaměření', 'Focus')}</h2><ul class="checks">${n.anotace.map((a) => `<li>${icon('check', 20)}<span>${esc(a)}</span></li>`).join('')}</ul>` : ''}
           ${n.vysledky?.length ? `<h2>${L('Doložené výsledky', 'Track record')}</h2><ul class="bullets">${n.vysledky.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}
-          ${n.vystupy || n.formy ? `<dl class="facts">${n.vystupy ? `<dt>${L('Hlavní výstupy', 'Main outputs')}</dt><dd>${esc(n.vystupy)}</dd>` : ''}${n.formy ? `<dt>${L('Formy spolupráce', 'Forms of cooperation')}</dt><dd>${esc(n.formy)}</dd>` : ''}</dl>` : ''}
-          ${n.garanti?.length ? `<h2>${L('Odborní garanti', 'Lead experts')}</h2><ul class="people">${n.garanti.map((g) => `<li><span class="avatar" aria-hidden="true">${esc(initials(g.jmeno))}</span><div><strong>${esc(g.jmeno)}</strong>${g.oblast ? `<span>${esc(g.oblast)}</span>` : ''}</div></li>`).join('')}</ul>` : ''}
           ${n.klicova_slova?.length || n.horizon ? `<div class="kw-block">${n.klicova_slova?.length ? `<ul class="tags">${n.klicova_slova.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}${n.horizon ? `<p class="small muted">${icon('globe', 16)} ${L('Vhodné i do evropských projektů Horizont Evropa', 'Also suitable for Horizon Europe projects')} (${esc(n.horizon)})</p>` : ''}</div>` : ''}
           ${web ? `<p><a href="${esc(web)}" target="_blank" rel="noopener noreferrer">${icon('external', 17)} ${L('Více informací na webu pracoviště', "More on the department's website")}</a></p>` : ''}
         </article>
-        <aside class="detail-side"><div class="cta-card">
-          <h2>${L('Řešíte něco podobného?', 'Facing a similar challenge?')}</h2>
-          <p>${L(`Poptávku nemusíte vázat na konkrétní téma. Popište, co potřebujete, a koordinátor najde vhodné odborníky – zpravidla do ${days()} pracovních dnů se vám ozve.`,
-            `Your enquiry does not need to refer to a specific topic. Describe what you need and our coordinator will find the right experts – you will usually hear from us within ${days()} working days.`)}</p>
-          <a class="btn btn-primary btn-block" href="#/poptavka">${L('Zadat poptávku', 'Submit an enquiry')} ${icon('arrow', 18)}</a>
-          <ul class="mini">
-            <li>${icon('check', 16)} ${L('Poptávka je nezávazná a zdarma', 'Free and non-binding')}</li>
-            <li>${icon('lock', 16)} ${L('Uvidí ji jen koordinátor a pracoviště, které ji bude řešit', 'Seen only by the coordinator and the department handling it')}</li>
-            <li>${icon('clip', 16)} ${L('Můžete přiložit výkresy či fotky', 'You can attach drawings or photos')}</li>
-          </ul>
-        </div></aside>
+        <aside class="detail-side"><dl class="facts card-facts">${facts.map(([t, v]) => `<dt>${esc(t)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></aside>
       </div>
       ${refs.length ? `<section class="section"><div class="section-head"><h2>${L('Realizované projekty pracoviště', 'Projects of this department')}</h2><a href="#/reference?p=${encodeURIComponent(n.pracoviste)}">${L('Všechny projekty pracoviště', 'All projects of this department')} ${icon('arrow', 18)}</a></div>
         <div class="grid cards-3">${refs.map(refCard).join('')}</div></section>` : ''}
-      <div class="mobile-cta"><a class="btn btn-primary btn-block" href="#/poptavka">${L('Zadat poptávku', 'Submit an enquiry')}</a></div>
     </div>`,
     mount(root) {
       root.addEventListener('click', (e) => {
