@@ -477,14 +477,14 @@ export function viewRequest() {
       <div class="page-head"><p class="eyebrow">${L('Poptávka', 'Enquiry')}</p><h1>${L('Popište, co potřebujete', 'Tell us what you need')}</h1>
         <p class="lead">${L(`Stačí pár vět. Koordinátor najde vhodné odborníky a zpravidla do ${days()} pracovních dnů se vám ozve. Poptávka je nezávazná a zdarma.`,
           `A few sentences are enough. Our coordinator will find the right experts and will usually get back to you within ${days()} working days. The enquiry is free and non-binding.`)}</p></div>
-      ${LIVE ? '' : `<div class="note note-warn">${icon('alert', 20)}<p><strong>${L('Ukázkový režim – poptávka se nikam neodešle.', 'Demo mode – the enquiry will not be sent anywhere.')}</strong> ${L('Skutečnou poptávku zatím pošlete e-mailem na', 'For a real enquiry, please e-mail')} <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>. ${L('Přílohy jsou v ukázce vypnuté.', 'Attachments are disabled in the demo.')}</p></div>`}
+      ${LIVE ? '' : `<div class="note note-warn">${icon('alert', 20)}<p><strong>${L('Ukázkový režim – poptávka se nikam neodešle.', 'Demo mode – the enquiry will not be sent anywhere.')}</strong> ${L('Skutečnou poptávku zatím pošlete e-mailem na', 'For a real enquiry, please e-mail')} <a href="mailto:${esc(c.email)}">${esc(c.email)}</a>.</p></div>`}
       <div class="request-grid">
         <form class="card form" data-form="poptavka" novalidate>
           <div class="error-summary" id="err-sum" tabindex="-1" role="alert" hidden></div>
           <div class="field" data-field="popis">
             <label for="f-popis">${L('Co potřebujete?', 'What do you need?')} <span class="req" aria-hidden="true">*</span></label>
-            <p class="hint" id="h-popis">${L('Popište problém nebo zakázku – o jakou stavbu nebo materiál jde a kde, co je potřeba udělat a do kdy, případně orientační rozpočet. Odborné termíny znát nemusíte. Důvěrné podrobnosti zatím neuvádějte.',
-              'Describe the problem or the job – which structure or material it concerns and where, what needs to be done and by when, and an indicative budget if you have one. You do not need to know the technical terms. Please do not include confidential details yet.')}</p>
+            <p class="hint" id="h-popis">${L('O jakou stavbu nebo materiál jde, co je potřeba udělat a do kdy. Důvěrné podrobnosti zatím neuvádějte.',
+              'Which structure or material it concerns, what needs to be done and by when. Please do not include confidential details yet.')}</p>
             <p class="field-error" id="e-popis" hidden></p>
             <textarea id="f-popis" name="popis" rows="7" maxlength="5000" aria-required="true" aria-describedby="h-popis e-popis c-popis"></textarea>
             <p class="counter" id="c-popis"></p>
@@ -495,8 +495,8 @@ export function viewRequest() {
             <div class="dropzone${LIVE ? '' : ' disabled'}" id="drop">
               ${icon('upload', 28)}
               ${LIVE ? `<p><strong>${L('Přetáhněte soubory sem', 'Drag files here')}</strong> ${L('nebo', 'or')} <label class="linklike" for="f-files">${L('vyberte z počítače', 'choose from your computer')}</label></p>
-              <p class="hint">${L(`PDF, Word, Excel, PowerPoint (formáty .docx, .xlsx, .pptx), obrázky, DWG/DXF/IFC · nejvýše ${CONFIG.maxFiles} souborů po ${CONFIG.maxFileMB} MB · uvidí je jen koordinátor a pracoviště, které poptávku vyřeší`,
-                `PDF, Word, Excel, PowerPoint (.docx, .xlsx, .pptx), images, DWG/DXF/IFC · up to ${CONFIG.maxFiles} files of ${CONFIG.maxFileMB} MB each · seen only by the coordinator and the department handling the enquiry`)}</p>
+              <p class="hint">${L(`PDF, Office, obrázky, DWG/DXF/IFC · nejvýše ${CONFIG.maxFiles} souborů po ${CONFIG.maxFileMB} MB`,
+                `PDF, Office, images, DWG/DXF/IFC · up to ${CONFIG.maxFiles} files of ${CONFIG.maxFileMB} MB each`)}</p>
               <input id="f-files" type="file" multiple class="sr-only" aria-labelledby="l-files" accept="${ALLOWED_EXT.map((e) => '.' + e).join(',')}">`
               : `<p>${L('V ukázkovém režimu nelze přikládat soubory.', 'Attachments cannot be added in demo mode.')}</p>`}
             </div>
@@ -513,7 +513,7 @@ export function viewRequest() {
             <div class="grid-2">
               ${fieldHtml('jmeno', L('Jméno a příjmení', 'Full name'), { req: true, auto: 'name', max: 120 })}
               ${fieldHtml('organizace', L('Organizace', 'Organization'), { auto: 'organization', max: 200 })}
-              ${fieldHtml('email', L('E-mail', 'Email'), { type: 'email', req: true, auto: 'email', max: 200, hint: L('Sem vám pošleme odpověď.', 'We will reply to this address.') })}
+              ${fieldHtml('email', L('E-mail', 'Email'), { type: 'email', req: true, auto: 'email', max: 200 })}
               ${fieldHtml('telefon', L('Telefon', 'Phone'), { type: 'tel', auto: 'tel', max: 20, inputmode: 'tel' })}
             </div>
           </fieldset>
@@ -521,10 +521,9 @@ export function viewRequest() {
           <div class="submit-row">
             <div class="field verify-field" data-field="overeni">
               <p class="field-error" id="e-overeni" hidden></p>
-              <button type="button" class="verify-box idle" id="f-overeni" aria-pressed="false" aria-describedby="h-overeni e-overeni">
+              <button type="button" class="verify-box idle" id="f-overeni" aria-pressed="false" aria-describedby="e-overeni">
                 <span class="vb-check" aria-hidden="true">${icon('check', 18)}</span>
-                <span class="vb-text"><strong class="vb-title">${L('Klikněte pro ověření, že nejste robot', 'Click to confirm you are not a robot')}</strong>
-                  <span class="vb-hint" id="h-overeni">${L('Ochrana proti spamu: krátký výpočet v prohlížeči, bez opisování obrázků a bez sledování.', 'Spam protection: a short computation in your browser – no picture puzzles, no tracking.')}</span></span>
+                <strong class="vb-title">${L('Klikněte, že nejste robot', 'Click to confirm you are not a robot')}</strong>
                 ${icon('shield', 24)}
               </button>
             </div>
@@ -540,8 +539,6 @@ export function viewRequest() {
             <li>${L('<strong>Posouzení</strong> koordinátorem a předání vhodnému pracovišti.', '<strong>Review</strong> by the coordinator and referral to the right department.')}</li>
             <li>${L(`<strong>Odpověď</strong> zpravidla do ${days()} pracovních dnů s návrhem dalšího postupu.`, `<strong>A reply</strong>, usually within ${days()} working days, with proposed next steps.`)}</li></ol>
           </div>
-          <div class="side-card"><h2>${L('Nevíte, co napsat?', 'Not sure what to write?')}</h2><p class="small">${L('Stačí odpovědět na otázky: Co se děje nebo co chystáte? Kde a o jakou stavbu či materiál jde? Co od nás očekáváte – měření, posudek, návrh, vývoj nebo výzkum? Do kdy?',
-            'Simply answer these questions: What is happening, or what are you planning? Where is it, and which structure or material does it concern? What do you expect from us – measurements, an expert assessment, a design, development or research? By when?')}</p></div>
           <div class="side-card contact-card"><h2>${L('Váš kontakt', 'Your contact person')}</h2>
             <p><strong>${esc(c.name)}</strong><br><span class="small muted">${esc(coordRole())}</span></p>
             <p class="small">${icon('mail', 16)} <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p></div>
@@ -616,10 +613,10 @@ export function viewRequest() {
         vb.className = `verify-box ${stav}`;
         vb.setAttribute('aria-pressed', String(stav === 'ok'));
         $('.vb-title', vb).textContent = {
-          idle: L('Klikněte pro ověření, že nejste robot', 'Click to confirm you are not a robot'),
-          working: L('Ověřujeme, že nejste robot…', 'Checking that you are not a robot…'),
-          ok: L('Ověřeno – poptávku můžete odeslat', 'Verified – you can send your enquiry'),
-          fail: L('Ověření se nepodařilo – klikněte prosím znovu', 'Verification failed – please click again'),
+          idle: L('Klikněte, že nejste robot', 'Click to confirm you are not a robot'),
+          working: L('Ověřujeme…', 'Verifying…'),
+          ok: L('Ověřeno', 'Verified'),
+          fail: L('Ověření se nepodařilo – klikněte znovu', 'Verification failed – click again'),
         }[stav];
       };
       vb.addEventListener('click', async () => {
@@ -663,7 +660,7 @@ export function viewRequest() {
         if (busy) return;
         const data = Object.fromEntries(FIELDS.map((k) => [k, form.elements[k].value.trim()]));
         const errs = validateRequest(data);
-        if (!overeno) errs.overeni = L('Klikněte na ověření, že nejste robot.', 'Click to confirm that you are not a robot.');
+        if (!overeno) errs.overeni = L('Klikněte, že nejste robot.', 'Click to confirm you are not a robot.');
         [...FIELDS, 'overeni'].forEach((k) => setError(k, errs[k] || ''));
         const sum = $('#err-sum', root);
         if (Object.keys(errs).length) {

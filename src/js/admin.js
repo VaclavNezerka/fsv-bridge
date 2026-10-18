@@ -84,7 +84,7 @@ function shell(active, inner, { limited = false } = {}) {
     <div class="admin-head"><p class="eyebrow">Administrace FSv Problem Hub</p>
       <div class="admin-user">${icon('user', 18)}<span>${esc(api.session()?.email || '')}</span>
         <button type="button" class="btn btn-secondary btn-sm" data-admin="logout">${icon('logout', 17)} Odhlásit</button></div></div>
-    ${LIVE ? '' : `<div class="note note-warn">${icon('info', 20)}<p><strong>Ukázkový režim bez databáze:</strong> zakázky, dokumenty i změny katalogu se ukládají jen v tomto prohlížeči (jiné zařízení je neuvidí). <button type="button" class="linklike" data-admin="reset-demo">Obnovit výchozí data</button></p></div>`}
+    ${LIVE ? '' : `<div class="note note-warn">${icon('info', 20)}<p><strong>Ukázkový režim:</strong> data zůstávají jen v tomto prohlížeči. <button type="button" class="linklike" data-admin="reset-demo">Obnovit výchozí data</button></p></div>`}
     ${LIVE && api.session() && !api.session().mfa && active !== 'ucet' ? `<div class="note note-warn">${icon('shield', 20)}<p><strong>Zapněte si dvoufázové ověření.</strong> Bez něj chrání kontakty a přílohy zadavatelů jen heslo. <a href="#/admin/ucet">Nastavit v záložce Účet</a></p></div>` : ''}
     <nav class="tabs" aria-label="Části administrace">${tabs.map(([id, l, ic]) => `<a href="#/admin/${id}"${id === active ? ' aria-current="page"' : ''}>${icon(ic, 18)}<span>${l}</span></a>`).join('')}</nav>
     <div class="admin-body">${inner}</div>
@@ -113,8 +113,7 @@ export function viewLogin(returnTo = '#/admin/poptavky') {
     html: `<div class="wrap page narrow-sm"><div class="card login">
       <span class="login-icon">${icon('lock', 30)}</span>
       <h1>Přihlášení správce</h1>
-      <p class="muted">Administrace FSv Problem Hub je přístupná jen koordinátorovi.</p>
-      ${LIVE ? '' : `<div class="note">${icon('info', 20)}<p>Ukázkový režim bez databáze – zakázky a dokumenty se ukládají jen v prohlížeči, ve kterém se přihlásíte.</p></div>`}
+      ${LIVE ? '' : `<div class="note">${icon('info', 20)}<p>Ukázkový režim – data zůstávají jen v tomto prohlížeči.</p></div>`}
       <form data-form="login" novalidate>
         <div class="field"><label for="l-email">E-mail</label><input id="l-email" name="email" type="email" autocomplete="username" required></div>
         <div class="field"><label for="l-pw">Heslo</label><div class="pwrow"><input id="l-pw" name="password" type="password" autocomplete="current-password" required>
@@ -409,11 +408,10 @@ async function openRequest(r, returnTo, onChange, list = []) {
       <section><h3>Přílohy od zadavatele</h3><div id="att">${loading()}</div></section>
     </div>
     <section class="docs">
-      <div class="docs-head"><h3>Dokumenty zakázky <span class="opt">(interní, vidí jen správce)</span></h3>
+      <div class="docs-head"><h3>Dokumenty zakázky <span class="opt">(interní)</span></h3>
         <button type="button" class="btn btn-secondary btn-sm" data-act="add-doc">${icon('upload', 16)} Přidat dokument</button>
         <input type="file" id="doc-file" multiple hidden accept="${ALLOWED_EXT.map((e) => '.' + e).join(',')}"></div>
       <div id="docs">${loading()}</div>
-      <p class="small muted">Nabídka, smlouva, dohoda o mlčenlivosti, protokoly, korespondence… PDF, Office (.docx, .xlsx, .pptx), obrázky, DWG/DXF/IFC nebo TXT/CSV, nejvýše ${CONFIG.maxFileMB} MB.</p>
     </section>
     <div class="req-actions">
       ${r.email ? `<a class="btn btn-secondary btn-sm" href="${esc(mails.reply)}" data-act="reply" data-mail="reply">${icon('mail', 16)} Odpovědět zadavateli</a>
@@ -429,7 +427,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
         <div class="field"><label for="r-garant">Garant na pracovišti</label><input id="r-garant" name="garant" value="${esc(r.garant || '')}" placeholder="jméno"></div>
         <div class="field"><label for="r-typ">Typ zadavatele</label><select id="r-typ" name="typ_zadavatele">${options(TYP_ZAD, r.typ_zadavatele)}</select></div>
       </div>
-      <div class="field"><label for="r-note">Interní poznámky <span class="opt">(zadavatel je nevidí)</span></label><textarea id="r-note" name="poznamka" rows="4">${esc(r.poznamka || '')}</textarea>
+      <div class="field"><label for="r-note">Interní poznámky</label><textarea id="r-note" name="poznamka" rows="4">${esc(r.poznamka || '')}</textarea>
         <button type="button" class="btn-link small" data-act="note-date">${icon('clock', 15)} Vložit dnešní datum</button></div>
       <details class="evidence"${evidenceOpen ? ' open' : ''}><summary>Evidence zakázky (pro vykazování)</summary>
         <div class="grid-2">
@@ -449,8 +447,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
         </div>
         <div class="field"><label for="r-zv">Zpětná vazba zadavatele</label><textarea id="r-zv" name="zpetna_vazba" rows="2">${esc(r.zpetna_vazba || '')}</textarea></div>
         <div class="field"><label for="r-ks">Kontakty a příležitosti pro další spolupráci</label>
-          <p class="hint" id="h-ks">Další kontaktní osoby, navazující zakázky, společné projekty, stáže studentů…</p>
-          <textarea id="r-ks" name="kontakty_spoluprace" rows="3" aria-describedby="h-ks">${esc(r.kontakty_spoluprace || '')}</textarea></div>
+          <textarea id="r-ks" name="kontakty_spoluprace" rows="3">${esc(r.kontakty_spoluprace || '')}</textarea></div>
       </details>
       <div id="hist" class="history"></div>
       <div class="actions"><button type="submit" class="btn btn-primary">Uložit</button>
@@ -609,7 +606,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
 function openNewRequest(returnTo, onChange) {
   openDialog(`<form data-form="req-new" class="req-new" novalidate>
     <h2 id="dlg-title">Zapsat poptávku</h2>
-    <p class="muted">Pro poptávky, které přišly e-mailem, telefonem nebo osobně. Dokumenty (např. e-mail se zadáním nebo výkresy) přidáte po zapsání v detailu zakázky.</p>
+    <p class="muted">Dokumenty přidáte po zapsání v detailu zakázky.</p>
     <div class="grid-2">
       <div class="field"><label for="n-zdroj">Jak poptávka přišla</label><select id="n-zdroj" name="zdroj">${Object.entries(ZDROJ).filter(([k]) => k !== 'formular').map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select></div>
       <div class="field"><label for="n-typ">Typ zadavatele</label><select id="n-typ" name="typ_zadavatele">${options(TYP_ZAD, '')}</select></div>
@@ -719,7 +716,7 @@ function photosEditor(fotos) {
         <button type="button" class="icon-btn danger" data-delphoto="${i}" aria-label="Odebrat fotografii ${i + 1}">${icon('trash', 17)}</button>
       </div></div>`).join('')}
     <label class="photo-add" for="ph-add">${icon('plus', 26)}<span>Přidat fotografie</span><input id="ph-add" type="file" accept="image/*" multiple class="sr-only"></label>
-  </div><p class="hint">První fotografie se zobrazuje v přehledu na webu. Fotky se před nahráním automaticky zmenší.</p>`;
+  </div><p class="hint">První fotografie se zobrazuje v přehledu.</p>`;
 }
 
 function editor(kind, id) {
@@ -760,11 +757,11 @@ function editor(kind, id) {
             ${text('nazev', 'Název', item.nazev, { req: true })}
             <div class="grid-2">${select('pracoviste', 'Pracoviště', item.pracoviste, depts, 'Vyberte pracoviště')}${select('kategorie', 'Obor', item.kategorie, kats, 'Vyberte obor')}</div>
             ${isOffer ? `
-              ${text('popis', 'Úvodní popis', item.popis, { rows: 3, hint: 'Nepovinné – jedna až dvě věty pro návštěvníky webu.' })}
+              ${text('popis', 'Úvodní popis', item.popis, { rows: 3 })}
               ${text('anotace', 'Zaměření', (item.anotace || []).join('\n'), { rows: 8, hint: 'Každou položku napište na samostatný řádek.' })}
-              ${text('vysledky', 'Doložené výsledky', (item.vysledky || []).join('\n'), { rows: 3, hint: 'Nepovinné, jedna položka na řádek.' })}
-              <fieldset class="field group"><legend>Odborní garanti <span class="opt">(interní)</span></legend><p class="hint">Na webu se garanti nezobrazují – u tématu je uvedeno jen pracoviště. Jméno, oblast, e-mail a telefon slouží koordinátorovi k předání poptávky pracovišti.</p><div id="people">${peopleHtml()}</div></fieldset>
-              ${text('klicova_slova', 'Klíčová slova', (item.klicova_slova || []).join(', '), { hint: 'Oddělte čárkou. Pomáhají při vyhledávání.' })}
+              ${text('vysledky', 'Doložené výsledky', (item.vysledky || []).join('\n'), { rows: 3, hint: 'Jedna položka na řádek.' })}
+              <fieldset class="field group"><legend>Odborní garanti <span class="opt">(interní – na webu se nezobrazují)</span></legend><div id="people">${peopleHtml()}</div></fieldset>
+              ${text('klicova_slova', 'Klíčová slova', (item.klicova_slova || []).join(', '), { hint: 'Oddělte čárkou.' })}
               <div class="grid-2">${text('laborator', 'Laboratoř / tým', item.laborator)}${text('horizon', 'Horizont Evropa', item.horizon, { hint: 'Např. Cluster 4' })}</div>
               <div class="grid-2">${text('vystupy', 'Hlavní výstupy', item.vystupy)}${text('formy', 'Formy spolupráce', item.formy)}</div>
               ${text('web', 'Web pracoviště', item.web, { type: 'url' })}`
@@ -912,8 +909,7 @@ export function viewDepts() {
         <div class="field"><label for="d-c-${esc(d.kod)}">Oblast</label><select id="d-c-${esc(d.kod)}" name="kategorie">${kats.map((k) => `<option value="${esc(k.id)}"${k.id === d.kategorie ? ' selected' : ''}>${esc(k.nazev)}</option>`).join('')}</select></div>
         <div class="field small-field"><label for="d-p-${esc(d.kod)}">Pořadí</label><input id="d-p-${esc(d.kod)}" name="poradi" type="number" value="${esc(d.poradi ?? 0)}"></div>
         <button type="submit" class="btn btn-secondary btn-sm">${isNew ? 'Přidat' : 'Uložit'}</button></form>`;
-      box.innerHTML = `<p class="muted">Názvy pracovišť se zobrazují u nabídek a referencí. Kód pracoviště nelze měnit.</p>
-        <div class="dept-list">${data.pracoviste.map((d) => row(d)).join('')}</div>
+      box.innerHTML = `<div class="dept-list">${data.pracoviste.map((d) => row(d)).join('')}</div>
         <h2 class="h3">Přidat pracoviště</h2>${row({ kod: '', nazev: '', kategorie: kats[0]?.id, poradi: data.pracoviste.length + 1 }, true)}`;
       box.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -957,7 +953,7 @@ export function viewAccount({ setup = false } = {}) {
           ${hint ? `<p class="hint" id="h-a-${id}">${esc(hint)}</p>` : ''}<input id="a-${id}" name="${id}" type="${type}" value="${esc(val ?? '')}"${auto ? ` autocomplete="${auto}"` : ''}${hint ? ` aria-describedby="h-a-${id}"` : ''}></div>`;
         box.innerHTML = `${setup ? `<div class="note note-warn">${icon('shield', 20)}<p><strong>Nejdřív zapněte dvoufázové ověření.</strong> Poptávky, kontakty a přílohy zadavatelů se zobrazí až po něm – ochrání je i při úniku hesla.</p></div>` : ''}
           ${recovery ? `<div class="note">${icon('key', 20)}<p><strong>Nastavte si nové heslo</strong> ve formuláři níže.</p></div>` : ''}
-          ${LIVE ? '' : `<div class="note">${icon('info', 20)}<p><strong>Ukázkový režim bez databáze:</strong> změny účtů a noví správci platí jen v tomto prohlížeči – nový správce se přihlásí jen zde, na jiném zařízení platí výchozí přihlášení z nastavení webu. Sdílené účty pro více zařízení, dvoufázové ověření a obnovu hesla e-mailem přinese databáze.</p></div>`}
+          ${LIVE ? '' : `<div class="note">${icon('info', 20)}<p><strong>Ukázkový režim:</strong> účty a jejich změny platí jen v tomto prohlížeči.</p></div>`}
           <div class="grid account-grid">
             <section class="card"><h2>${icon('user', 22)} Moje údaje</h2>
               <form data-form="me" novalidate>
@@ -992,7 +988,7 @@ export function viewAccount({ setup = false } = {}) {
                   ${LIVE ? '' : field('n-heslo', 'Dočasné heslo', '', { type: 'password', auto: 'new-password' })}
                 </div>
                 <p class="hint">${LIVE ? 'Účet nového správce nejdřív vytvořte nebo pozvěte v Supabase (Authentication → Users → Invite user). Pak ho zde přidejte mezi správce – uvidí poptávky, jakmile si nastaví heslo a dvoufázové ověření.'
-                  : 'Dočasné heslo (alespoň 12 znaků) předejte novému správci osobně; po prvním přihlášení si ho změní v této záložce.'}</p>
+                  : 'Dočasné heslo musí mít alespoň 12 znaků.'}</p>
                 <button type="submit" class="btn btn-primary">${icon('plus', 17)} Přidat správce</button></form>
             </section>`}
           </div>`;
