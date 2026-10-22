@@ -47,9 +47,9 @@ export function setLang(l) {
 // Pevné texty stránky (index.html): data-i18n = text, data-i18n-html = text se značkami, data-i18n-aria / -title = atribut
 const STATIC = {
   skip: ['Přeskočit na obsah', 'Skip to content'],
-  home: ['FSv Problem Hub – úvodní stránka', 'FSv Problem Hub – home page'],
+  home: ['FSv Bridge – úvodní stránka', 'FSv Bridge – home page'],
   faculty: ['Fakulta stavební ČVUT v Praze', 'Faculty of Civil Engineering, CTU in Prague'],
-  facultyShort: ['FSv ČVUT', 'CTU in Prague'],
+  facultyShort: ['ČVUT v Praze', 'CTU in Prague'],
   tagline: ['spolupráce s praxí', 'industry cooperation'],
   mainNav: ['Hlavní navigace', 'Main navigation'],
   navOffer: ['Co umíme', 'Our expertise'],

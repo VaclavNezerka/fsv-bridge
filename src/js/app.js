@@ -1,9 +1,10 @@
-// FSv Problem Hub – vstupní bod: směrování, rozvržení a globální události.
+// FSv Bridge – vstupní bod: směrování, rozvržení a globální události.
 import { CONFIG, LIVE } from './config.js';
 import { api, errorMessage } from './api.js';
 import { $, $$, esc, icon, toast, ss, initDialog, closeDialog, watchTypo } from './util.js';
 import * as P from './public.js';
 import { L, lang, setLang, applyStatic, switchHtml } from './i18n.js';
+import { enhance } from './fx.js';
 
 const main = $('#main');
 let current = { hash: null };
@@ -91,7 +92,8 @@ async function render(focus = true) {
   const apply = () => {
     if (my !== seq) return;
     main.innerHTML = `<div class="view">${view.html}</div>`;
-    document.title = `${view.title} – FSv Problem Hub`;
+    enhance(main);
+    document.title = `${view.title} – FSv Bridge`;
     markNav(r.seg[0]);
     if (focus) {
       window.scrollTo(0, 0);

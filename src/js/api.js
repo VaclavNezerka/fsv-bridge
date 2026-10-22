@@ -1,4 +1,4 @@
-// Datová vrstva FSv Problem Hub.
+// Datová vrstva FSv Bridge.
 // Ostrý režim: Supabase REST API (PostgREST, Storage, Auth) bez externích knihoven.
 // Ukázkový režim: vše jen v prohlížeči (localStorage + IndexedDB pro přílohy).
 import { CONFIG, LIVE, DEMO_ADMIN } from './config.js';
@@ -279,7 +279,7 @@ function newDemoRequest(d, kdo) {
   const now = new Date().toISOString();
   const t = (k) => String(d[k] ?? '').trim();
   return {
-    id: crypto.randomUUID(), cislo: `PH-${new Date().getFullYear()}-${String(n).padStart(4, '0')}`, vytvoreno: now, zmeneno: now,
+    id: crypto.randomUUID(), cislo: `FSVB-${new Date().getFullYear()}-${String(n).padStart(4, '0')}`, vytvoreno: now, zmeneno: now,
     popis: t('popis'), nabidka_id: null, nabidka_nazev: '', jmeno: t('jmeno'), // poptávka se na téma z přehledu neváže
     email: t('email').toLowerCase(), telefon: t('telefon'), organizace: t('organizace'),
     typ_zadavatele: ['firma', 'verejna', 'soukroma'].includes(d.typ_zadavatele) ? d.typ_zadavatele : '',
@@ -719,7 +719,7 @@ const live = {
   },
   async mfaFactors() { const u = await call('/auth/v1/user'); return u.factors || []; },
   async mfaEnroll() {
-    const f = await call('/auth/v1/factors', { method: 'POST', body: { factor_type: 'totp', friendly_name: 'FSv Problem Hub ' + Date.now(), issuer: 'FSv Problem Hub' } });
+    const f = await call('/auth/v1/factors', { method: 'POST', body: { factor_type: 'totp', friendly_name: 'FSv Bridge ' + Date.now(), issuer: 'FSv Bridge' } });
     const qr = f.totp?.qr_code || '';
     // REST API vrací QR kód jako SVG; předponu data: doplňuje až knihovna supabase-js
     if (qr && !qr.startsWith('data:')) f.totp.qr_code = 'data:image/svg+xml;utf8,' + encodeURIComponent(qr);

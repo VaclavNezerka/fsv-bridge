@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lokální náhled FSv Problem Hub bez mezipaměti prohlížeče (změny se projeví hned po obnovení).
+"""Lokální náhled FSv Bridge bez mezipaměti prohlížeče (změny se projeví hned po obnovení).
 
 Použití (z kořene projektu):  python tools/serve.py [port] [složka]
 Výchozí: port 8765, složka src → http://127.0.0.1:8765/
@@ -19,7 +19,8 @@ if hasattr(sys.stdout, "reconfigure"):
 class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
     extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map,
                       ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css",
-                      ".json": "application/json", ".svg": "image/svg+xml", ".webp": "image/webp"}
+                      ".json": "application/json", ".svg": "image/svg+xml", ".webp": "image/webp",
+                      ".webm": "video/webm", ".mp4": "video/mp4"}
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")

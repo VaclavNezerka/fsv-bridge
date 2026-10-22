@@ -1,12 +1,12 @@
-# FSv Problem Hub – koncept aplikace
+# FSv Bridge – koncept aplikace
 
 Testovací verze, říjen 2026. Koordinátor: Václav Nežerka
 
 ## 1. Účel
 
-FSv Problem Hub je jedno vstupní místo, přes které firmy a instituce z praxe zadávají Fakultě stavební ČVUT konkrétní problémy a zakázky. Naplňuje klíčovou aktivitu KA4 projektu PPSŘ 03 a ukazatel **KPI 4**: fungující Problem Hub s alespoň jedním aktivním průmyslovým zadáním. Podklady pro vykazování dává přehled poptávek a zakázek (stavy, historie, export CSV).
+FSv Bridge je jedno vstupní místo, přes které firmy a instituce z praxe zadávají Fakultě stavební ČVUT konkrétní problémy a zakázky. Naplňuje klíčovou aktivitu KA4 projektu PPSŘ 03 (v projektové dokumentaci pod původním názvem „FSv Problem Hub“) a ukazatel **KPI 4**: fungující platforma s alespoň jedním aktivním průmyslovým zadáním. Podklady pro vykazování dává přehled poptávek a zakázek (stavy, historie, export CSV).
 
-Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, může s ním nadále jednat napřímo.
+FSv Bridge nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, může s ním nadále jednat napřímo.
 
 ## 2. Uživatelé
 
@@ -26,16 +26,17 @@ Hub nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště zná, m
 - **Česky i anglicky.** Veřejná část má anglickou verzi pro zahraniční firmy a výzkumné partnery. Přepíná se vlajkou vpravo nahoře vedle zámku Admin a lze na ni odkazovat adresou s `?lang=en`. Odborné texty používají britskou angličtinu a oficiální anglické názvy pracovišť. Administrace zůstává česká, poptávky z anglické verze jsou v ní označené a šablony odpovědí jsou anglicky.
 - **Přístupnost a mobilní zobrazení.** Cílem je WCAG 2.1 AA: ovládání klávesnicí, popisky polí, kontrast, alternativní texty a respektování omezení animací. Web funguje od šířky 360 px.
 - **Vizuální styl ČVUT.** Modrá ČVUT (#0065BD) a písmo Technika s náhradním systémovým písmem. Oficiální logo se doplní podle manuálu vizuální identity.
+- **Moderní vzhled, který nepřekáží.** Úvod oživuje ilustrace mostu mezi praxí a fakultou (konstrukce se vykreslí, po pásech běží signál, karta poptávky prochází třemi kroky), sekce se při posouvání plynule odkrývají a čísla naběhnou. Sekce „Moderní metody a laboratoře“ ukazuje tři krátká vypočtená videa (laserové skenování, korelace digitálního obrazu, model MKP). Videa se stahují a hrají, jen když jsou na obrazovce, a jsou bez zvuku. Kdo má v systému omezené animace nebo úsporu dat, uvidí statické obrázky. Smyčky jde zastavit tlačítkem „Pozastavit animace“ (WCAG 2.2.2) a volba se pamatuje.
 - **Moderní a přitom jednoduchá technika.** Web je statický, bez knihoven a sestavovacích nástrojů. Používá nativní ES moduly, `<dialog>`, View Transitions, Web Workers a Web Crypto. Data a přihlášení zajišťuje Supabase (PostgreSQL v EU).
 
 ## 4. Mapa aplikace
 
 | Stránka | Adresa | Obsah |
 |---|---|---|
-| Úvod | `#/` | Výzva k zadání poptávky, vyhledávání, rychlé volby, obory, postup ve 3 krocích, vybrané projekty, časté dotazy |
+| Úvod | `#/` | Výzva k zadání poptávky, vyhledávání, rychlé volby, obory, moderní metody a laboratoře (videa), postup ve 3 krocích, vybrané projekty, časté dotazy |
 | Co umíme | `#/nabidka`, `#/nabidka/<id>` | Přehled expertízy s filtry. Detail tématu obsahuje pracoviště, zaměření, doložené výsledky a fotografie. Konkrétní téma se nepoptává – poptávka se zadává obecně (tlačítko „Zadat poptávku“ v záhlaví) |
 | Realizované projekty | `#/reference`, `#/reference/<id>` | Výzkumné a vývojové projekty: co bylo potřeba, co fakulta vyvinula, přínos, financování a řešitelé. Zakázkové reference se nezveřejňují |
-| Zadat poptávku | `#/poptavka`, `#/odeslano` | Formulář na jedné stránce. Výsledkem je číslo poptávky (např. PH-2026-0001) a popis dalšího postupu |
+| Zadat poptávku | `#/poptavka`, `#/odeslano` | Formulář na jedné stránce. Výsledkem je číslo poptávky (např. FSVB-2026-0001) a popis dalšího postupu |
 | Právní informace | `#/osobni-udaje`, `#/podminky`, `#/pristupnost` | Návrhy textů k posouzení |
 | Anglická verze | `?lang=en#/…` (vlajka vpravo nahoře) | Všechny veřejné stránky v angličtině, volba jazyka se pamatuje v prohlížeči |
 | Administrace | `#/admin/…` (zámek „Admin“ vpravo nahoře) | Poptávky a zakázky, expertíza, reference, pracoviště a účet (vlastní údaje, změna hesla, další správci, dvoufázové ověření) |
@@ -128,7 +129,7 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
 | § 89 odst. 3 zák. č. 127/2005 Sb. (cookies) | Web nepoužívá cookies ani analytiku. V úložišti prohlížeče drží jen technicky nezbytná data: rozepsanou poptávku a přihlášení správce. | Při přidání analytiky bude nutný souhlas. |
 | Zák. č. 99/2019 Sb. (přístupnost) | Cílem je WCAG 2.1 AA, ochrana bez CAPTCHA. Prohlášení o přístupnosti je připravené jako návrh. | Audit přístupnosti před spuštěním. |
 | Zák. č. 480/2004 Sb. (obchodní sdělení) | Web nerozesílá žádná obchodní sdělení. | – |
-| Zák. č. 134/2016 Sb. (veřejné zakázky) | Podmínky výslovně uvádějí, že hub nenahrazuje zadávací řízení, a zmiňují předběžnou tržní konzultaci. | – |
+| Zák. č. 134/2016 Sb. (veřejné zakázky) | Podmínky výslovně uvádějí, že FSv Bridge nenahrazuje zadávací řízení, a zmiňují předběžnou tržní konzultaci. | – |
 | Zák. č. 340/2015 Sb. (registr smluv) | Podmínky upozorňují, že smlouvy ČVUT nad 50 000 Kč bez DPH se zveřejňují. | – |
 | Zák. č. 89/2012 Sb. (§ 1732, § 1811, § 1820) | Přehled expertízy není nabídkou, smlouva vzniká až písemně; spotřebitelům se poskytnou předsmluvní informace. | – |
 | Reference | Zveřejňují se jen výzkumné a vývojové projekty; zakázkové reference s údaji objednatelů a cen se nepřebírají. | – |
@@ -152,7 +153,7 @@ Položku lze skrýt, aniž by se smazala. Zakázkové reference (pro objednatele
    - české překlady tří referencí K134, které byly dodány jen anglicky,
    - anglický překlad přehledu a projektů (odborné termíny, názvy přístrojů a partnerů),
    - aktuálnost textů, garantů a fotografií.
-4. Vizuální identita a začlenění do vnějšího webu fakulty ve spolupráci s PR. Případně vlastní doména, např. `problemhub.fsv.cvut.cz`.
+4. Vizuální identita a začlenění do vnějšího webu fakulty ve spolupráci s PR. Případně vlastní doména, např. `bridge.fsv.cvut.cz`.
 5. Audit přístupnosti a zveřejnění finálního prohlášení.
 6. Volitelně přihlášení správců přes ČVUT SSO a napojení na evidenci smluv.
 

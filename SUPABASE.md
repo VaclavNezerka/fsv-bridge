@@ -15,7 +15,7 @@ Celé nastavení zabere asi 30 minut. Hesla a klíče do tohoto návodu ani do r
 
 1. Na <https://supabase.com> se přihlaste (např. účtem GitHub) a zvolte **New project**.
 2. Vyplňte projekt:
-   - **Name:** `fsv-problem-hub`
+   - **Name:** `fsv-bridge`
    - **Database password:** vygenerujte a uložte do správce hesel. Aplikace ho nepotřebuje.
    - **Region:** **Central EU (Frankfurt)**. Je to důležité kvůli GDPR a v zásadách ochrany osobních údajů je uvedeno.
 3. **Smlouva o zpracování (DPA):** v nastavení organizace najdete Data Processing Addendum Supabase. Spolu se zásadami ochrany osobních údajů ji předejte pověřenci ČVUT. Poskytovatel je americká společnost, data jsou uložena v EU.
@@ -34,7 +34,7 @@ Celé nastavení zabere asi 30 minut. Hesla a klíče do tohoto návodu ani do r
    select jobname, schedule from cron.job;
    ```
 
-   Výsledkem musí být `fsv-problem-hub-uklid` (každých 15 minut maže otisky IP adres a starý spam – mazání slibují zásady ochrany osobních údajů) a `fsv-problem-hub-souhrn` (pracovní dny ráno, viz bod 6). Pokud chybí, zapněte rozšíření **pg_cron** v **Database → Extensions** a spusťte `schema.sql` znovu.
+   Výsledkem musí být `fsv-bridge-uklid` (každých 15 minut maže otisky IP adres a starý spam – mazání slibují zásady ochrany osobních údajů) a `fsv-bridge-souhrn` (pracovní dny ráno, viz bod 6). Pokud chybí, zapněte rozšíření **pg_cron** v **Database → Extensions** a spusťte `schema.sql` znovu.
 
 ## 3. Přihlašování – jen správci
 
@@ -109,7 +109,7 @@ Databáze může při každé nové poptávce a každý pracovní den ráno (sou
      on conflict (key) do update set value = excluded.value;
    ```
 
-Tělo zprávy má tvar `{"text": "Nová poptávka PH-2026-0001 …"}`. Denní souhrn se posílá v pracovní dny v 5:30 UTC (7:30 letního, 6:30 zimního času), jen pokud je co hlásit.
+Tělo zprávy má tvar `{"text": "Nová poptávka FSVB-2026-0001 …"}`. Denní souhrn se posílá v pracovní dny v 5:30 UTC (7:30 letního, 6:30 zimního času), jen pokud je co hlásit.
 
 ## 7. Katalog na webu
 

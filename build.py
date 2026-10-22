@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Sestavení FSv Problem Hub pro GitHub Pages (nebo jiný statický hosting).
+"""Sestavení FSv Bridge pro GitHub Pages (nebo jiný statický hosting).
 
 Použití (z kořene projektu):
   python build.py                -> publish/  (během testování zakazuje indexaci vyhledávači)
   python build.py --indexovat    -> publish/  pro ostrý provoz (povolí indexaci)
-  python build.py --url https://ucet.github.io/fsv-problem-hub/   -> absolutní adresy pro náhled odkazu (Open Graph)
+  python build.py --url https://ucet.github.io/fsv-bridge/   -> absolutní adresy pro náhled odkazu (Open Graph)
 
 Co sestavení dělá:
   * zkopíruje src/ do publish/,
@@ -191,7 +191,7 @@ def clean(out: Path) -> None:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Sestavení FSv Problem Hub pro statický hosting")
+    ap = argparse.ArgumentParser(description="Sestavení FSv Bridge pro statický hosting")
     ap.add_argument("--indexovat", action="store_true", help="ostrý provoz: povolit indexaci vyhledávači")
     ap.add_argument("--url", default="", help="veřejná adresa webu (pro náhled odkazu v e-mailu a na sítích)")
     args = ap.parse_args()

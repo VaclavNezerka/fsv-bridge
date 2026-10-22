@@ -129,6 +129,9 @@ def merge(soubor):
             if t.get("foto_popisky"):
                 o["foto"] = [{"popis": p} for p in t["foto_popisky"]]
             cil[t["id"]] = o
+        for stare in [i for i in cil if i not in puvodni[kind]]:  # položka z katalogu zmizela nebo dostala nové id
+            print(f"  odstraněno (není v katalogu): {stare}")
+            del cil[stare]
         poradi = [x["id"] for x in cs.get(kind, [])]
         en[kind] = sorted(cil.values(), key=lambda x: poradi.index(x["id"]) if x["id"] in poradi else 10 ** 6)
     en["kategorie"] = [{"id": k, "nazev": v} for k, v in KATEGORIE.items()]

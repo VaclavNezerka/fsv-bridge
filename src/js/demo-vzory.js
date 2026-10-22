@@ -3,7 +3,7 @@
 
 const den = 86400000;
 const iso = (dniZpet) => new Date(Date.now() - dniZpet * den).toISOString();
-const dokument = (nazev, radky) => ['VZOROVÝ DOKUMENT – FSv Problem Hub', '', nazev, '', ...radky, '',
+const dokument = (nazev, radky) => ['VZOROVÝ DOKUMENT – FSv Bridge', '', nazev, '', ...radky, '',
   'Soubor slouží jen k ukázce funkce „Dokumenty zakázky“. Údaje jsou smyšlené.'].join('\n');
 
 export function vzory(kdo) {

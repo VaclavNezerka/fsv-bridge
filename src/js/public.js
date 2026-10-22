@@ -5,6 +5,7 @@ import { api, validateRequest, safeFileName, errorMessage, ALLOWED_EXT } from '.
 import * as pow from './pow.js';
 import { $, $$, esc, nl2br, norm, truncate, icon, toast, go, ss, ls, openDialog, onDialogClose, debounce, fileSize, safeUrl } from './util.js';
 import { L, PL, lang } from './i18n.js';
+import { fxToggle } from './fx.js';
 
 export const state = { catalog: null, index: null };
 
@@ -20,7 +21,7 @@ const refById = (id) => state.catalog.reference.find((r) => r.id === id);
 const route = (h) => h.replace(/^#\/?/, '').split('?')[0];
 const setHashQuiet = (hash) => { if (route(location.hash) === route(hash)) history.replaceState(null, '', hash); };
 const days = () => CONFIG.responseDays;
-const coordRole = () => L(`${CONFIG.coordinator.role}, Fakulta stavební ČVUT v Praze`, 'Coordinator of FSv Problem Hub, Faculty of Civil Engineering, CTU in Prague');
+const coordRole = () => L(`${CONFIG.coordinator.role}, Fakulta stavební ČVUT v Praze`, 'Coordinator of FSv Bridge, Faculty of Civil Engineering, CTU in Prague');
 
 // ------------------------------------------------------------------ vyhledávání
 function stem(t) {
@@ -100,7 +101,7 @@ function refCard(r) {
   </article>`;
 }
 const withinDays = () => L(`zpravidla do ${days()} pracovních dnů`, `usually within ${days()} working days`);
-const stepsHtml = () => `<ol class="steps">
+const stepsHtml = (cls = '') => `<ol class="steps ${cls}">
   <li><h3>${L('Popíšete, co potřebujete', 'You describe what you need')}</h3><p>${L('Pár vět stačí. Můžete přiložit výkresy, fotky nebo zadání.', 'A few sentences are enough. You can attach drawings, photos or specifications.')}</p><span class="when">${icon('clock', 15)} ${L('3–5 minut', '3–5 minutes')}</span></li>
   <li><h3>${L('Najdeme odborníky', 'We find the experts')}</h3><p>${L('Koordinátor poptávku posoudí a předá ji pracovišti, které vám nejlépe pomůže.', 'Our coordinator reviews your enquiry and passes it on to the department best placed to help.')}</p><span class="when">${icon('clock', 15)} ${withinDays()}</span></li>
   <li><h3>${L('Domluvíme spolupráci', 'We agree on the cooperation')}</h3><p>${L('Pracoviště s vámi upřesní zadání a připraví nabídku s cenou a termínem. Poptávka vás k ničemu nezavazuje.', 'The department clarifies the scope with you and prepares a quotation with price and schedule. The enquiry places you under no obligation.')}</p><span class="when">${icon('check', 15)} ${L('nezávazně', 'no obligation')}</span></li>
@@ -131,26 +132,39 @@ const FAQ = () => [
       'Often, yes – for example through innovation vouchers or programmes of the Technology Agency of the Czech Republic. We will gladly advise you on suitable options.')],
 ];
 
+// Úvodní ilustrace: most mezi praxí a fakultou. Konstrukce se vykreslí, po pásech běží signál, skener měří
+// a karta poptávky prochází třemi kroky (animace v app.css; bez animací zůstane statický obrázek).
 function heroSvg() {
   const nodes = [[40, 210], [140, 210], [240, 210], [340, 210], [440, 210], [90, 130], [190, 130], [290, 130], [390, 130]];
-  return `<svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
-    <defs><pattern id="hg" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="rgba(255,255,255,.09)"/></pattern></defs>
-    <rect width="480" height="320" fill="url(#hg)"/>
+  const members = [['M40 210H440', 4], ['M90 130H390', 4], ...['M40 210L90 130', 'M90 130L140 210', 'M140 210L190 130', 'M190 130L240 210',
+    'M290 130L340 210', 'M340 210L390 130', 'M390 130L440 210'].map((d) => [d, 2.5]), ...[90, 190, 290, 390].map((x) => [`M${x} 130V210`, 1.4, '.4'])];
+  const steps = [['#0065BD', L('Poptávka přijata', 'Enquiry received')], ['#F2A900', L('Hledáme odborníky', 'Finding experts')],
+    ['#1C6E37', L('Domluvíme spolupráci', 'Agreeing on terms')]];
+  return `<svg class="hx" viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+    <defs><linearGradient id="hx-sg" x1="0" x2="1"><stop offset="0" stop-color="#8FDCFF" stop-opacity="0"/><stop offset=".8" stop-color="#8FDCFF" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity=".9"/></linearGradient>
+      <radialGradient id="hx-dot"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="#A8E6FF"/><stop offset="1" stop-color="#57C7FF" stop-opacity="0"/></radialGradient></defs>
+    <rect class="hx-scan" x="-44" y="96" width="44" height="146" fill="url(#hx-sg)"/>
     <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M90 100H390M90 94v12M390 94v12" stroke-width="1.2" opacity=".55"/>
-      <path d="M40 210H440" stroke-width="4"/><path d="M90 130H390" stroke-width="4"/>
-      <path d="M40 210L90 130L140 210L190 130L240 210M290 130L340 210L390 130L440 210" stroke-width="2.5" opacity=".9"/>
-      <path d="M90 130V210M190 130V210M290 130V210M390 130V210" stroke-width="1.4" opacity=".4"/>
-      <path d="M40 210l-14 22h28zM440 210l-14 22h28z" stroke-width="2"/>
-      <path d="M8 242H472" stroke-width="1.5" opacity=".45" stroke-dasharray="2 7"/>
-      <path d="M240 210L290 130" stroke="#F2A900" stroke-width="5"/>
-      <path d="M281 186L318 252" stroke="#F2A900" stroke-width="1.5" stroke-dasharray="3 5"/>
+      <g class="hx-dim"><path d="M90 100H390M90 94v12M390 94v12" stroke-width="1.2" opacity=".55"/></g>
+      <g class="hx-base"><path d="M40 210l-14 22h28zM440 210l-14 22h28z" stroke-width="2"/><path d="M8 242H472" stroke-width="1.5" opacity=".45" stroke-dasharray="2 7"/></g>
+      <g class="hx-members">${members.map(([d, w, o]) => `<path pathLength="1" d="${d}" stroke-width="${w}"${o ? ` opacity="${o}"` : ''}/>`).join('')}</g>
+      <path class="hx-glow" d="M240 210L290 130" stroke="#F2A900" stroke-width="14" opacity=".22"/>
+      <path class="hx-accent" pathLength="1" d="M240 210L290 130" stroke="#F2A900" stroke-width="5"/>
+      <path class="hx-link" d="M281 193V252" stroke="#F2A900" stroke-width="1.5" stroke-dasharray="3 5"/>
     </g>
-    ${nodes.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4.5" fill="#fff"/>`).join('')}
-    <text x="240" y="90" fill="rgba(255,255,255,.75)" font-size="13" text-anchor="middle">L = 32 m</text>
-    <circle cx="281" cy="176" r="15" fill="#F2A900"/><text x="281" y="183" fill="#0B2A4A" font-size="20" font-weight="800" text-anchor="middle">?</text>
-    <g transform="translate(262 252)"><rect width="206" height="54" rx="11" fill="#fff"/><circle cx="22" cy="27" r="6" fill="#1C6E37"/>
-      <text x="38" y="22" font-size="11.5" fill="#596577">${L('Poptávka přijata', 'Enquiry received')}</text><text x="38" y="40" font-size="14" font-weight="700" fill="#0B2A4A">${L('Hledáme odborníky', 'Finding experts')}</text></g>
+    <g class="hx-nodes">${nodes.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4.5" fill="#fff"/>`).join('')}</g>
+    <circle class="hx-pulse hx-p1" cx="90" cy="130" r="11" fill="url(#hx-dot)"/><circle class="hx-pulse hx-p2" cx="440" cy="210" r="11" fill="url(#hx-dot)"/>
+    <circle class="hx-pulse hx-p3" cx="90" cy="130" r="11" fill="url(#hx-dot)"/>
+    <text class="hx-dim" x="240" y="90" fill="rgba(255,255,255,.75)" font-size="13" text-anchor="middle">L = 32 m</text>
+    <g class="hx-side" fill="rgba(255,255,255,.78)" font-size="10.5" font-weight="700" letter-spacing="2" text-anchor="middle">
+      <text x="40" y="266">${L('PRAXE', 'INDUSTRY')}</text><text x="440" y="266">${L('FAKULTA', 'FACULTY')}</text></g>
+    <g class="hx-mark"><circle class="hx-ring" cx="281" cy="176" r="15" fill="none" stroke="#F2A900" stroke-width="2"/><circle cx="281" cy="176" r="15" fill="#F2A900"/>
+      <text x="281" y="183" fill="#0B2A4A" font-size="20" font-weight="800" text-anchor="middle">?</text></g>
+    <g transform="translate(130 254)"><g class="hx-card"><rect width="220" height="56" rx="11" fill="#fff"/>
+      ${steps.map(([c, t], i) => `<g class="hx-s hx-s${i + 1}"><circle cx="22" cy="26" r="6" fill="${c}"/>
+        <text x="38" y="21" font-size="11.5" fill="#596577">${L(`Krok ${i + 1} ze 3`, `Step ${i + 1} of 3`)}</text><text x="38" y="39" font-size="14" font-weight="700" fill="#0B2A4A">${t}</text>
+        ${[0, 1, 2].map((k) => `<rect x="${38 + k * 26}" y="45" width="22" height="3" rx="1.5" fill="${k <= i ? c : '#D7DFE8'}"/>`).join('')}</g>`).join('')}
+    </g></g>
   </svg>`;
 }
 
@@ -158,6 +172,27 @@ function heroSvg() {
 const QUICK = () => (lang === 'en'
   ? ['load test', 'monitoring', 'expert assessment', 'materials development', 'numerical modelling', 'digital twin', 'BIM', 'laser scanning']
   : ['zatěžovací zkouška', 'monitoring', 'posudek', 'vývoj materiálů', 'numerické modelování', 'digitální dvojče', 'BIM', 'laserové skenování']);
+
+// Moderní metody s krátkými vypočtenými videi (tools/tech_videa.py); videa se načtou, až když je sekce vidět.
+const DIC_ID = 'k102-korelace-digitalniho-obrazu-dic';
+const TECH = () => [
+  { id: 'skenovani', chip: L('Mračno bodů', 'Point cloud'), href: `#/nabidka?q=${encodeURIComponent(L('laserové skenování', 'laser scanning'))}`,
+    title: L('Laserové skenování a 3D dokumentace', 'Laser scanning and 3D documentation'),
+    text: L('Mračna bodů, digitální dvojčata a zaměření mostů, budov i památek.', 'Point clouds, digital twins and surveys of bridges, buildings and monuments.') },
+  { id: 'dic', chip: L('Pole přetvoření', 'Strain field'),
+    href: offerById(DIC_ID) ? `#/nabidka/${DIC_ID}` : `#/nabidka?q=${encodeURIComponent(L('korelace digitálního obrazu', 'digital image correlation'))}`,
+    title: L('Korelace digitálního obrazu (DIC)', 'Digital image correlation (DIC)'),
+    text: L('Bezkontaktní měření posunů a přetvoření na celém povrchu vzorku či konstrukce.', 'Non-contact measurement of displacements and strains over the whole surface of a specimen or structure.') },
+  { id: 'mkp', chip: L('Model MKP', 'FE model'), href: `#/nabidka?q=${encodeURIComponent(L('numerické modelování', 'numerical modelling'))}`,
+    title: L('Numerické modelování a monitoring', 'Numerical modelling and monitoring'),
+    text: L('Výpočty metodou konečných prvků, simulace zatížení a sledování konstrukcí v provozu.', 'Finite element analysis, load simulations and monitoring of structures in service.') },
+];
+const techCard = (t) => `<article class="tcard">
+  <div class="tcard-media"><video class="fx-video" muted loop playsinline preload="none" disablepictureinpicture disableremoteplayback
+    width="768" height="480" poster="img/tech/${t.id}.webp" aria-hidden="true"><source data-src="video/${t.id}.webm" type="video/webm"><source data-src="video/${t.id}.mp4" type="video/mp4"></video>
+    <span class="tcard-chip">${esc(t.chip)}</span></div>
+  <div class="tcard-body"><h3><a class="stretched" href="${t.href}">${esc(t.title)}</a></h3><p>${esc(t.text)}</p></div>
+</article>`;
 
 export function viewHome() {
   const c = state.catalog;
@@ -180,18 +215,18 @@ export function viewHome() {
           <button class="btn btn-light" type="submit">${icon('search', 20)}<span>${L('Hledat', 'Search')}</span></button>
         </form>
         <p class="quick">${QUICK().map((q) => `<a href="#/nabidka?q=${encodeURIComponent(q)}">${esc(q)}</a>`).join('')}</p>
-      </div><div class="hero-art">${heroSvg()}</div></div></section>
+      </div><div class="hero-art">${heroSvg()}${fxToggle('fx-toggle-icon')}</div></div></section>
 
-      <section class="stats" aria-label="${L('FSv Problem Hub v číslech', 'FSv Problem Hub in numbers')}"><div class="wrap stats-grid">
-        <div><strong>${c.nabidky.length}</strong><span>${L('témat expertízy', 'expertise topics')}</span></div>
-        <div><strong>${c.reference.length}</strong><span>${L('výzkumných projektů', 'research projects')}</span></div>
-        <div><strong>${c.pracoviste.length}</strong><span>${L('pracovišť a laboratoří', 'departments and laboratories')}</span></div>
-        <div><strong>${obory}</strong><span>${L('oborů stavebnictví', 'fields of civil engineering')}</span></div>
+      <section class="stats" aria-label="${L('FSv Bridge v číslech', 'FSv Bridge in numbers')}"><div class="wrap stats-grid">
+        <div><strong data-count="${c.nabidky.length}">${c.nabidky.length}</strong><span>${L('témat expertízy', 'expertise topics')}</span></div>
+        <div><strong data-count="${c.reference.length}">${c.reference.length}</strong><span>${L('výzkumných projektů', 'research projects')}</span></div>
+        <div><strong data-count="${c.pracoviste.length}">${c.pracoviste.length}</strong><span>${L('pracovišť a laboratoří', 'departments and laboratories')}</span></div>
+        <div><strong data-count="${obory}">${obory}</strong><span>${L('oborů stavebnictví', 'fields of civil engineering')}</span></div>
       </div></section>
 
       <section class="wrap section" aria-labelledby="h-oblasti">
         <div class="section-head"><h2 id="h-oblasti">${L('Obory', 'Fields')}</h2><a href="#/nabidka">${L('Celý přehled expertízy', 'Full overview of our expertise')} ${icon('arrow', 18)}</a></div>
-        <div class="grid katgrid">${c.kategorie.filter((k) => counts[k.id]).map((k) => `
+        <div class="grid katgrid reveal-kids">${c.kategorie.filter((k) => counts[k.id]).map((k) => `
           <a class="kat kat-${esc(k.id)}" href="#/nabidka?k=${encodeURIComponent(k.id)}">
             <span class="kat-icon">${icon(k.ikona, 28)}</span>
             <span class="kat-name">${esc(k.nazev)}</span>
@@ -199,20 +234,25 @@ export function viewHome() {
           </a>`).join('')}</div>
       </section>
 
-      <section class="band" aria-labelledby="h-jak"><div class="wrap section">
+      <section class="tech" aria-labelledby="h-tech"><div class="wrap section">
+        <div class="section-head"><h2 id="h-tech">${L('Moderní metody a laboratoře', 'Modern methods and laboratories')}</h2>${fxToggle()}</div>
+        <div class="grid tech-grid reveal-kids">${TECH().map(techCard).join('')}</div>
+      </div></section>
+
+      <section class="band band-after-dark" aria-labelledby="h-jak"><div class="wrap section">
         <h2 id="h-jak">${L('Jak to funguje', 'How it works')}</h2>
         <p class="section-lead">${L('Jedno místo pro celou fakultu. Nemusíte znát katedry ani odborné termíny – stačí popsat, co řešíte.', 'One point of contact for the whole faculty. You do not need to know our departments or the technical terms – just describe your problem.')}</p>
-        ${stepsHtml()}
+        ${stepsHtml('reveal-kids')}
         <p class="center"><a class="btn btn-primary btn-lg" href="#/poptavka">${L('Zadat poptávku', 'Submit an enquiry')} ${icon('arrow', 20)}</a></p>
       </div></section>
 
       ${pick.length ? `<section class="wrap section" aria-labelledby="h-ref">
         <div class="section-head"><h2 id="h-ref">${L('Vybrané projekty', 'Selected projects')}</h2><a href="#/reference">${L('Všechny realizované projekty', 'All projects')} ${icon('arrow', 18)}</a></div>
-        <div class="grid cards-3">${pick.map(refCard).join('')}</div>
+        <div class="grid cards-3 reveal-kids">${pick.map(refCard).join('')}</div>
       </section>` : ''}
 
       <section class="wrap section" aria-labelledby="h-proc"><h2 id="h-proc">${L('Proč spolupracovat s fakultou', 'Why work with the faculty')}</h2>
-        <div class="grid benefits">
+        <div class="grid benefits reveal-kids">
           <div class="benefit"><span class="icon-tile">${icon('flask', 26)}</span><div><h3>${L('Laboratoře a experimentální zázemí', 'Laboratories and experimental facilities')}</h3><p>${L('Akreditované zkušebny, unikátní přístroje i podzemní laboratoř.', 'Accredited testing laboratories, unique equipment and an underground laboratory.')}</p></div></div>
           <div class="benefit"><span class="icon-tile">${icon('users', 26)}</span><div><h3>${L('Odborníci napříč obory', 'Experts across disciplines')}</h3><p>${L('Od materiálů a konstrukcí po vodu, geodézii a digitalizaci.', 'From materials and structures to water engineering, geodesy and digitalization.')}</p></div></div>
           <div class="benefit"><span class="icon-tile">${icon('spark', 26)}</span><div><h3>${L('Výzkumný potenciál a know-how', 'Research capacity and know-how')}</h3><p>${L('Od rychlé expertízy přes průmyslový vývoj po experimentální výzkum a společné projekty.', 'From quick expert advice to industrial development, experimental research and joint projects.')}</p></div></div>
@@ -221,10 +261,10 @@ export function viewHome() {
       </section>
 
       <section class="wrap section" aria-labelledby="h-faq"><h2 id="h-faq">${L('Časté dotazy', 'Frequently asked questions')}</h2>
-        <div class="faq">${FAQ().map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div>
+        <div class="faq reveal">${FAQ().map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div>
       </section>
 
-      <section class="wrap home-end"><div class="cta-box">
+      <section class="wrap home-end"><div class="cta-box reveal">
         <div><h2>${L('Nenašli jste, co hledáte?', "Didn't find what you were looking for?")}</h2><p>${L('Napište nám, co řešíte. Na fakultě je mnohem víc odborníků, než se vejde do přehledu.', 'Tell us what you need. The faculty has many more experts than this overview can show.')}</p></div>
         <a class="btn btn-light btn-lg" href="#/poptavka">${L('Zadat poptávku', 'Submit an enquiry')}</a>
       </div></section>`,
@@ -712,7 +752,7 @@ export function viewRequest() {
           sum.hidden = false;
           // při výpadku spojení nebo databáze nabídneme náhradní cestu, aby poptávka nepropadla
           const mail = /^(invalid_|spam)/.test(err.code || '') ? '' : `<p>${L('Pokud potíže trvají, pošlete poptávku e-mailem na', 'If the problem persists, please send your enquiry by email to')}
-            <a href="mailto:${esc(CONFIG.coordinator.email)}?subject=${encodeURIComponent(L('Poptávka – FSv Problem Hub', 'Enquiry – FSv Problem Hub'))}">${esc(CONFIG.coordinator.email)}</a>.</p>`;
+            <a href="mailto:${esc(CONFIG.coordinator.email)}?subject=${encodeURIComponent(L('Poptávka – FSv Bridge', 'Enquiry – FSv Bridge'))}">${esc(CONFIG.coordinator.email)}</a>.</p>`;
           sum.innerHTML = `<h2>${L('Poptávku se nepodařilo odeslat', 'Your enquiry could not be sent')}</h2><p>${esc(errorMessage(err))}</p>${mail}`;
           sum.focus();
           $('#progress', root).hidden = true;
@@ -779,7 +819,7 @@ const DOCS = {
       Coordinator: ${esc(CONFIG.coordinator.name)}, ${coordLink()}. CTU Data Protection Officer: ${dpoLink()}.</p>
       <h2>What data we process</h2><ul><li>your name, email address and, where provided, your phone number and the name of your organization;</li><li>the text of your enquiry, attachments and optional details (who is enquiring, request for confidentiality);</li><li>for completed cooperation, also documents relating to the contract (offers, contracts, reports), your feedback and contacts for further cooperation;</li><li>to prevent abuse, a short-lived hash of your IP address, which is deleted automatically within 24 hours at the latest.</li></ul>
       <h2>Purpose and legal basis</h2><p>We process the data to handle your enquiry and to negotiate a possible contract. If you are enquiring on your own behalf, the legal basis is steps taken prior to entering into a contract (Article 6(1)(b) GDPR). If you are a contact person of an organization, the legal basis is our legitimate interest in responding to the enquiry and negotiating cooperation (Article 6(1)(f) GDPR). Without your name and email address we cannot handle the enquiry. After the cooperation has ended, we use the data to evaluate it and to arrange any follow-up cooperation with your organization (legitimate interest, Article 6(1)(f) GDPR); you may object to this at any time. We do not send you marketing communications.</p>
-      <h2>Who can see the data</h2><p>Your enquiry, contact details and attachments are seen by the coordinator and the department handling the enquiry and, to the extent necessary, by the audit bodies of the project that funds Problem Hub. None of this is published.</p>
+      <h2>Who can see the data</h2><p>Your enquiry, contact details and attachments are seen by the coordinator and the department handling the enquiry and, to the extent necessary, by the audit bodies of the project that funds FSv Bridge. None of this is published.</p>
       <h2>Processors and transfers outside the EU</h2><p>Enquiries and attachments are stored with the database service provider Supabase, Inc. in a data centre in the EU (Frankfurt am Main). The website is hosted on GitHub Pages (GitHub, Inc.), which processes visitors' IP addresses in technical logs when pages are displayed; the database provider also keeps technical logs containing IP addresses. Both providers are based in the USA; transfers of data are covered by safeguards under Chapter V GDPR (standard contractual clauses or the EU–US Data Privacy Framework).</p>
       <h2>How long we keep the data</h2><p>If no contract is concluded, we keep the data for no more than 3 years after the last contact and then anonymize them. If a contract is concluded, we keep them for the period required by law and by the CTU filing and records retention rules. Contacts for further cooperation are kept for no more than 3 years after the last contact. Unsolicited messages (spam) are deleted within 30 days. On request, we will delete the data earlier unless a legal obligation prevents us from doing so.</p>
       <h2>Your rights</h2><p>You have the right of access to your data, to rectification, erasure and restriction of processing, to data portability where data are processed for the purposes of a contract, and the right to object to processing based on legitimate interest. You can contact the coordinator or the Data Protection Officer. You may lodge a complaint with the Office for Personal Data Protection (www.uoou.gov.cz). No automated decision-making takes place.</p>
@@ -790,7 +830,7 @@ const DOCS = {
       Koordinátor: ${esc(CONFIG.coordinator.name)}, ${coordLink()}. Pověřenec pro ochranu osobních údajů ČVUT: ${dpoLink()}.</p>
       <h2>Jaké údaje zpracováváme</h2><ul><li>jméno a příjmení, e-mail, případně telefon a název organizace,</li><li>text poptávky, přílohy a nepovinná upřesnění (kdo poptává, požadavek na mlčenlivost),</li><li>u realizované spolupráce také dokumenty k zakázce (nabídky, smlouvy, protokoly), vaši zpětnou vazbu a kontakty pro další spolupráci,</li><li>pro ochranu před zneužitím krátkodobě otisk (hash) IP adresy – mažeme jej automaticky nejpozději do 24 hodin.</li></ul>
       <h2>Účel a právní základ</h2><p>Údaje zpracováváme k vyřízení poptávky a k jednání o případné smlouvě. Poptáváte-li sami za sebe, je právním základem jednání o smlouvě (čl. 6 odst. 1 písm. b) GDPR). Jste-li kontaktní osobou organizace, je jím náš oprávněný zájem odpovědět na poptávku a jednat o spolupráci (čl. 6 odst. 1 písm. f) GDPR). Bez jména a e-mailu poptávku vyřídit nelze. Po skončení spolupráce údaje použijeme k jejímu vyhodnocení a k domluvě případné navazující spolupráce s vaší organizací (oprávněný zájem, čl. 6 odst. 1 písm. f) GDPR); proti tomu můžete kdykoli vznést námitku. Obchodní sdělení vám nezasíláme.</p>
-      <h2>Kdo údaje uvidí</h2><p>Poptávku, kontaktní údaje a přílohy vidí koordinátor a pracoviště, které poptávku vyřizuje, v nezbytném rozsahu také kontrolní orgány projektu, z něhož je Problem Hub financován. Nic z toho nezveřejňujeme.</p>
+      <h2>Kdo údaje uvidí</h2><p>Poptávku, kontaktní údaje a přílohy vidí koordinátor a pracoviště, které poptávku vyřizuje, v nezbytném rozsahu také kontrolní orgány projektu, z něhož je FSv Bridge financován. Nic z toho nezveřejňujeme.</p>
       <h2>Zpracovatelé a předání mimo EU</h2><p>Poptávky a přílohy ukládáme u poskytovatele databázové služby Supabase, Inc. v datovém centru v EU (Frankfurt nad Mohanem). Web je hostován službou GitHub Pages (GitHub, Inc.), která při zobrazení stránek zpracovává IP adresy návštěvníků v technických záznamech; technické záznamy s IP adresami vede i poskytovatel databáze. Oba poskytovatelé sídlí v USA, předání údajů zajišťují záruky podle kapitoly V GDPR (standardní smluvní doložky, případně rámec ochrany osobních údajů EU–USA).</p>
       <h2>Jak dlouho údaje uchováváme</h2><p>Nevznikne-li smlouva, uchováváme údaje nejvýše 3 roky od posledního kontaktu a poté je anonymizujeme. Vznikne-li smlouva, uchováváme je po dobu stanovenou právními předpisy a spisovým a skartačním řádem ČVUT. Kontakty pro další spolupráci uchováváme nejdéle 3 roky od posledního kontaktu. Nevyžádané zprávy (spam) mažeme do 30 dnů. Na požádání údaje smažeme dříve, pokud tomu nebrání zákonná povinnost.</p>
       <h2>Vaše práva</h2><p>Máte právo na přístup k údajům, jejich opravu, výmaz a omezení zpracování, u jednání o smlouvě také na přenositelnost údajů, a právo vznést námitku proti zpracování na základě oprávněného zájmu. Obrátit se můžete na koordinátora nebo pověřence. Stížnost můžete podat u Úřadu pro ochranu osobních údajů (www.uoou.gov.cz). K automatizovanému rozhodování nedochází.</p>
@@ -801,7 +841,7 @@ const DOCS = {
     html: () => `${DRAFT_NOTE()}${EN_NOTE()}<ol class="terms">${lang === 'en' ? `
       <li><strong>Non-binding nature.</strong> Neither an enquiry nor our reply to it constitutes an offer to conclude a contract. A contract is concluded only in writing, upon signature by a person authorized to act on behalf of CTU. The faculty may decline an enquiry, in particular if it falls outside the faculty's scope or if there is no available capacity.</li>
       <li><strong>Overview of expertise.</strong> The overview of expertise and projects is for guidance only and constitutes neither an offer nor a price list. The scope, accreditation, price and schedule will be confirmed by the department in its quotation.</li>
-      <li><strong>Preliminary statements.</strong> Statements made before a contract is concluded are indicative and do not replace an expert assessment. In case of danger (for example, a structure in critical condition), call 112 or contact the building authority – Problem Hub is not an emergency service.</li>
+      <li><strong>Preliminary statements.</strong> Statements made before a contract is concluded are indicative and do not replace an expert assessment. In case of danger (for example, a structure in critical condition), call 112 or contact the building authority – FSv Bridge is not an emergency service.</li>
       <li><strong>Price and contract.</strong> As a research organization, CTU provides services and contract research at market price, or at a price covering full costs plus a reasonable margin, in accordance with State aid rules (EU Framework for State aid for research and development and innovation). Depending on the nature of the cooperation, we conclude a contract for work, a contract research agreement, a licence agreement or a cooperation agreement. The contract governs the scope, price, schedule, rights to results, publication and confidentiality.</li>
       <li><strong>Confidentiality.</strong> We do not publish enquiries or attachments and use them only to handle the enquiry. Please do not include trade secrets or inventions that are not yet protected – confidential details are exchanged only after a non-disclosure agreement has been concluded, which we will propose on request. The faculty may also work on similar topics independently; an enquiry does not give rise to any rights to such results. CTU contracts with a value exceeding CZK 50,000 excluding VAT are published in the Czech Register of Contracts (Act No. 340/2015 Coll.); trade secrets may be redacted.</li>
       <li><strong>Public contracting authorities.</strong> An enquiry does not replace the procedure under Act No. 134/2016 Coll., on Public Procurement, or your internal rules for small-scale public contracts. If your enquiry is part of a preliminary market consultation, please state so in the enquiry.</li>
@@ -809,7 +849,7 @@ const DOCS = {
       <li><strong>Direct cooperation.</strong> You may continue to deal directly with a department you already know.</li>` : `
       <li><strong>Nezávaznost.</strong> Poptávka ani odpověď na ni nejsou návrhem na uzavření smlouvy. Smlouva vzniká až písemně, podpisem osoby oprávněné jednat za ČVUT. Fakulta může poptávku odmítnout, zejména pokud neodpovídá jejímu zaměření nebo nemá volnou kapacitu.</li>
       <li><strong>Přehled expertízy.</strong> Přehled expertízy a realizovaných projektů slouží jen pro orientaci a není nabídkou ani ceníkem. Rozsah, akreditaci, cenu a termín potvrdí pracoviště v nabídce.</li>
-      <li><strong>Předběžná vyjádření.</strong> Vyjádření před uzavřením smlouvy jsou orientační a nenahrazují posudek. Hrozí-li nebezpečí (například havarijní stav konstrukce), volejte 112 nebo kontaktujte stavební úřad – Problem Hub není pohotovostní služba.</li>
+      <li><strong>Předběžná vyjádření.</strong> Vyjádření před uzavřením smlouvy jsou orientační a nenahrazují posudek. Hrozí-li nebezpečí (například havarijní stav konstrukce), volejte 112 nebo kontaktujte stavební úřad – FSv Bridge není pohotovostní služba.</li>
       <li><strong>Cena a smlouva.</strong> ČVUT jako výzkumná organizace poskytuje služby a smluvní výzkum za tržní cenu, případně za cenu pokrývající plné náklady s přiměřeným ziskem, v souladu s pravidly veřejné podpory (Rámec EU pro státní podporu výzkumu, vývoje a inovací). Podle povahy spolupráce uzavíráme smlouvu o dílo, smlouvu o smluvním výzkumu, licenční smlouvu nebo smlouvu o spolupráci. Smlouva upraví rozsah, cenu, termíny, práva k výsledkům, publikaci a mlčenlivost.</li>
       <li><strong>Důvěrnost.</strong> Poptávky a přílohy nezveřejňujeme a použijeme je jen k vyřízení poptávky. Neuvádějte v nich obchodní tajemství ani dosud nechráněné vynálezy – důvěrné podrobnosti si vyměníme až po uzavření dohody o mlčenlivosti, kterou vám na požádání navrhneme. Fakulta se podobným tématům může věnovat i nezávisle; poptávka vám k takovým výsledkům nezakládá žádná práva. Smlouvy ČVUT v hodnotě nad 50 000 Kč bez DPH se zveřejňují v registru smluv (zákon č. 340/2015 Sb.), obchodní tajemství v nich lze znečitelnit.</li>
       <li><strong>Veřejní zadavatelé.</strong> Poptávka nenahrazuje postup podle zákona č. 134/2016 Sb., o zadávání veřejných zakázek, ani vaše vnitřní pravidla pro zakázky malého rozsahu. Jde-li o předběžnou tržní konzultaci, uveďte to prosím v poptávce.</li>
@@ -822,13 +862,13 @@ const DOCS = {
       <p>Czech Technical University in Prague is committed to making this web application accessible in accordance with Act No. 99/2019 Coll., on the accessibility of websites and mobile applications.</p>
       <h2>Compliance status</h2><p>The application is <strong>partially compliant</strong> with standard ČSN EN 301 549 (WCAG 2.1, level AA). The test version has not yet undergone an independent audit.</p>
       <h2>Non-accessible content</h2><ul><li>Some photographs in the overview of expertise and the projects have only the name of the topic or project as alternative text, not a description of the image.</li><li>Files attached to enquiries by clients are not subject to accessibility checks.</li></ul>
-      <h2>Measures applied</h2><ul><li>semantic structure, a “Skip to content” link and keyboard operation;</li><li>field labels and clear error messages with an error summary;</li><li>text and control contrast in line with WCAG 2.1 AA, a clearly visible focus indicator and respect for reduced-motion settings;</li><li>spam protection without image tests (CAPTCHA), which many people find impossible to pass.</li></ul>
+      <h2>Measures applied</h2><ul><li>semantic structure, a “Skip to content” link and keyboard operation;</li><li>field labels and clear error messages with an error summary;</li><li>text and control contrast in line with WCAG 2.1 AA, a clearly visible focus indicator and respect for reduced-motion settings;</li><li>animations and videos on the home page can be paused with a button and do not start at all if reduced motion is set; the videos have no sound;</li><li>spam protection without image tests (CAPTCHA), which many people find impossible to pass.</li></ul>
       <h2>Preparation of this statement</h2><p>Prepared on ${esc(CONFIG.statementDate)} on the basis of a self-assessment.</p>
       <h2>Feedback</h2><p>Have you encountered a barrier? Please write to ${coordLink()}. If you are not satisfied with the response, you may contact the Ministry of the Interior of the Czech Republic as the supervisory authority.</p>` : `
       <p>ČVUT v Praze se zavazuje zpřístupnit tuto webovou aplikaci v souladu se zákonem č. 99/2019 Sb., o přístupnosti internetových stránek a mobilních aplikací.</p>
       <h2>Stav souladu</h2><p>Aplikace je <strong>částečně v souladu</strong> s normou ČSN EN 301 549 (WCAG 2.1, úroveň AA). Testovací verze dosud neprošla nezávislým auditem.</p>
       <h2>Nepřístupný obsah</h2><ul><li>Část fotografií v přehledu expertízy a u projektů má jako alternativní text jen název tématu nebo projektu, nikoli popis obsahu snímku.</li><li>Soubory, které zadavatelé přikládají k poptávkám, nejsou předmětem kontroly přístupnosti.</li></ul>
-      <h2>Uplatněná řešení</h2><ul><li>sémantická struktura, odkaz „Přeskočit na obsah“ a ovládání klávesnicí,</li><li>popisky polí a srozumitelné chybové hlášky se souhrnem chyb,</li><li>kontrast textu a ovládacích prvků podle WCAG 2.1 AA, viditelné zvýraznění prvku s fokusem a respektování omezení animací,</li><li>ochrana proti spamu bez obrázkových testů (CAPTCHA), které bývají pro řadu lidí nepřekonatelné.</li></ul>
+      <h2>Uplatněná řešení</h2><ul><li>sémantická struktura, odkaz „Přeskočit na obsah“ a ovládání klávesnicí,</li><li>popisky polí a srozumitelné chybové hlášky se souhrnem chyb,</li><li>kontrast textu a ovládacích prvků podle WCAG 2.1 AA, viditelné zvýraznění prvku s fokusem a respektování omezení animací,</li><li>animace a videa na úvodní stránce lze zastavit tlačítkem a při nastavení omezených animací se vůbec nespustí; videa jsou bez zvuku,</li><li>ochrana proti spamu bez obrázkových testů (CAPTCHA), které bývají pro řadu lidí nepřekonatelné.</li></ul>
       <h2>Vypracování prohlášení</h2><p>Vypracováno dne ${esc(CONFIG.statementDate)} na základě vlastního posouzení.</p>
       <h2>Zpětná vazba</h2><p>Narazili jste na překážku? Napište na ${coordLink()}. Pokud nebudete s odpovědí spokojeni, můžete se obrátit na Ministerstvo vnitra ČR jako orgán dohledu.</p>`}`,
   },

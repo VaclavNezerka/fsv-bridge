@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Import expertízy pracovišť FSv z adresáře „expertiza“ do FSv Problem Hub.
+"""Import expertízy pracovišť FSv z adresáře „expertiza“ do FSv Bridge.
 
 Čte dokumenty Word (Nabidka/Kxxx/…, Reference/Kxxx/…, včetně archivů ZIP), vytahuje z nich
 nabídky služeb a reference, převádí fotky do WebP a zapisuje:
@@ -716,7 +716,7 @@ SKRYT = {
 KAT_PODLE_OBSAHU = {
     "k122-vyvoj-cementovych-a-bezcementovych": "materialy", "k122-vyuziti-deponovanych-popelovin": "materialy",
     "k122-vyuziti-produktu-spalovani": "materialy", "k132-mikroskopie-mikrostrukturni": "materialy",
-    "k122-digitalizace-robotizace-ai": "digitalizace",
+    "k122-digitalizace-robotizace-ai": "digitalizace", "k102-analyza-fyzikalne-chemickych": "materialy",
 }
 # Příliš dlouhé názvy: kratší název a podrobnosti do úvodního popisu (klíč = začátek původního názvu).
 NAZVY = {
@@ -724,6 +724,7 @@ NAZVY = {
         "Dynamické výpočty stavebních konstrukcí a lávek pro chodce",
         "Například odezva lávek na zatížení chodci, simulace běžného provozu a vandalismu, další konfigurace "
         "zatěžovacích stavů nebo odezva konstrukce na technologické zatížení."),
+    "Analýza fyzikálně-chemických parametrů povrchů pevných látek": ("Analýza fyzikálně-chemických parametrů pevných látek", ""),  # 22. 10. 2026
     "Výpočetní (a technické) posouzení správnosti návrhu": (
         "Posouzení a optimalizace skladby vozovky",
         "Výpočetní a technické posouzení správnosti návrhu konstrukční skladby vozovky s ohledem na návrhové "
@@ -1301,7 +1302,7 @@ def write_seed(full):
         sys.exit("Chyba: data obsahují oddělovač seed.sql")
     OUT_SEED.parent.mkdir(parents=True, exist_ok=True)
     OUT_SEED.write_text(
-        "-- FSv Problem Hub – vstupní data katalogu expertízy (vygenerováno tools/import_expertiza.py)\n"
+        "-- FSv Bridge – vstupní data katalogu expertízy (vygenerováno tools/import_expertiza.py)\n"
         "-- Spusťte v Supabase SQL Editoru až po schema.sql. Obsahuje kontakty pracovníků – nepublikujte.\n"
         f"select public.import_catalog({tag}{payload}{tag}::jsonb);\n", encoding="utf-8")
 

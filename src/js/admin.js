@@ -81,7 +81,7 @@ function shell(active, inner, { limited = false } = {}) {
   const label = all.find(([id]) => id === active)?.[1] || '';
   return `<div class="wrap page admin">
     <h1 class="sr-only">Administrace – ${esc(label)}</h1>
-    <div class="admin-head"><p class="eyebrow">Administrace FSv Problem Hub</p>
+    <div class="admin-head"><p class="eyebrow">Administrace FSv Bridge</p>
       <div class="admin-user">${icon('user', 18)}<span>${esc(api.session()?.email || '')}</span>
         <button type="button" class="btn btn-secondary btn-sm" data-admin="logout">${icon('logout', 17)} Odhlásit</button></div></div>
     ${LIVE ? '' : `<div class="note note-warn">${icon('info', 20)}<p><strong>Ukázkový režim:</strong> data zůstávají jen v tomto prohlížeči. <button type="button" class="linklike" data-admin="reset-demo">Obnovit výchozí data</button></p></div>`}
@@ -315,14 +315,14 @@ function requestMails(r, deptName) {
     r.telefon ? `Telefon: ${r.telefon}` : null,
     r.jazyk === 'en' ? 'Zadavatel komunikuje anglicky (poptávka z anglické verze webu).' : null,
     '', 'Text poptávky:', popis,
-    r.pocet_priloh ? `\nPřílohy (${r.pocet_priloh}) jsou uložené v administraci FSv Problem Hub, na požádání je přepošlu.` : null,
+    r.pocet_priloh ? `\nPřílohy (${r.pocet_priloh}) jsou uložené v administraci FSv Bridge, na požádání je přepošlu.` : null,
   ].filter((x) => x !== null).join('\n');
   // odkaz mailto má omezenou délku (Outlook) – do e-mailu jde zkrácený text, celý jde zkopírovat
   const short = r.popis.length > 600 ? `${r.popis.slice(0, 600)}… (zkráceno – celé znění pošlu na požádání)` : r.popis;
   const dalsi = deptName ? `Předali jsme ji pracovišti ${deptName}, které se Vám ozve a upřesní zadání.`
     : 'Hledáme pro ni vhodné pracoviště – jakmile ho najdeme, ozve se Vám a upřesní zadání.';
   const en = r.jazyk === 'en';
-  const signEn = `Kind regards\n\n${c.name}\nCoordinator, FSv Problem Hub\nFaculty of Civil Engineering, Czech Technical University in Prague\n${c.email}`;
+  const signEn = `Kind regards\n\n${c.name}\nCoordinator, FSv Bridge\nFaculty of Civil Engineering, Czech Technical University in Prague\n${c.email}`;
   const dalsiEn = deptName ? 'We have passed it on to the relevant department of the faculty, which will contact you to clarify the details.'
     : 'We are looking for the right department – once we have found it, it will contact you to clarify the details.';
   return {
@@ -340,8 +340,8 @@ function requestMails(r, deptName) {
         `Dobrý den,\n\nděkujeme za Vaši poptávku č. ${r.cislo}. Bohužel ji tentokrát nemůžeme převzít – [doplňte důvod, např. téma je mimo `
         + `zaměření fakulty nebo pracoviště nemá v požadovaném termínu kapacitu].\n\n[Případně doporučte jiný postup nebo kontakt.]\n\n`
         + `Děkujeme za důvěru a budeme rádi, když se na nás obrátíte znovu.\n\n${sign}`),
-    handover: (to) => mailto(to, `Poptávka ${r.cislo} z FSv Problem Hub`,
-      `Dobrý den,\n\ndo FSv Problem Hub přišla poptávka, která odpovídá vaší expertíze. Můžete se prosím zadavateli ozvat?\n\n${facts(short)}\n\n`
+    handover: (to) => mailto(to, `Poptávka ${r.cislo} z FSv Bridge`,
+      `Dobrý den,\n\ndo FSv Bridge přišla poptávka, která odpovídá vaší expertíze. Můžete se prosím zadavateli ozvat?\n\n${facts(short)}\n\n`
       + (r.nda ? 'Zadavatel požaduje nejprve dohodu o mlčenlivosti – přílohy a podrobnosti předám až po jejím uzavření.\n\n' : '')
       + 'Poptávka je důvěrná, použijte ji prosím jen k jejímu vyřízení; zakázku realizujte jménem ČVUT. Do 5 pracovních dnů mi prosím '
       + 'dejte vědět, zda ji přebíráte, a později výsledek (nabídka, cena, smlouva, nebo důvod nerealizace).\n\n'
@@ -692,7 +692,7 @@ function catalogList(kind) {
       box.addEventListener('click', async (e) => {
         if (!e.target.closest('[data-act="export"]')) return;
         const full = await api.adminCatalog();
-        downloadBlob(new Blob([JSON.stringify(full, null, 1)], { type: 'application/json' }), `fsv-problem-hub-katalog-${new Date().toISOString().slice(0, 10)}.json`);
+        downloadBlob(new Blob([JSON.stringify(full, null, 1)], { type: 'application/json' }), `fsv-bridge-katalog-${new Date().toISOString().slice(0, 10)}.json`);
         toast('Katalog byl exportován (obsahuje i interní kontakty).');
       });
     },
@@ -976,7 +976,7 @@ export function viewAccount({ setup = false } = {}) {
                 <button type="button" class="btn btn-primary" data-act="mfa-on">Zapnout dvoufázové ověření</button><div id="mfa-setup"></div>`}
             </section>` : ''}
             ${setup ? '' : `<section class="card card-wide"><h2>${icon('users', 22)} Správci</h2>
-              <div class="table-wrap"><table class="data"><caption class="sr-only">Správci FSv Problem Hub</caption>
+              <div class="table-wrap"><table class="data"><caption class="sr-only">Správci FSv Bridge</caption>
                 <thead><tr><th scope="col">Jméno</th><th scope="col">E-mail</th><th scope="col">Přidán</th><th scope="col"><span class="sr-only">Akce</span></th></tr></thead>
                 <tbody>${admins.map((a) => `<tr><td><strong>${esc(a.jmeno || '—')}</strong>${a.ja ? ' <span class="badge tone-info">vy</span>' : ''}</td><td>${esc(a.email)}</td>
                   <td class="small muted">${a.vytvoreno ? esc(fmtDate(a.vytvoreno)) : 'výchozí účet'}${a.pridal ? ` · přidal(a) ${esc(a.pridal)}` : ''}</td>

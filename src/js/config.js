@@ -1,4 +1,4 @@
-// Konfigurace FSv Problem Hub.
+// Konfigurace FSv Bridge.
 // Dokud nevyplníte údaje Supabase, běží aplikace v ukázkovém režimu: poptávky, dokumenty
 // i úpravy katalogu se ukládají jen v prohlížeči. Postup zprovoznění databáze: viz SUPABASE.md.
 export const CONFIG = {
@@ -13,7 +13,7 @@ export const CONFIG = {
 
   coordinator: {
     name: 'Václav Nežerka',
-    role: 'koordinátor FSv Problem Hub',
+    role: 'koordinátor FSv Bridge',
     email: 'vaclav.nezerka@cvut.cz',
   },
   dpo: 'dpo@cvut.cz',        // pověřenec pro ochranu osobních údajů ČVUT

@@ -1,5 +1,5 @@
 -- =====================================================================================
--- FSv Problem Hub – databázové schéma pro Supabase (PostgreSQL 15+)
+-- FSv Bridge – databázové schéma pro Supabase (PostgreSQL 15+)
 -- Spusťte v Supabase → SQL Editor → New query → Run. Skript lze bezpečně spustit znovu,
 -- i nad databází založenou starší verzí (doplní nové sloupce, funkce a pravidla).
 -- Poté spusťte seed.sql (data katalogu) a vytvořte správce (viz SUPABASE.md).
@@ -309,7 +309,7 @@ begin
   if not public.is_admin() then
     raise exception using message = 'forbidden', errcode = 'P0001';
   end if;
-  perform pg_advisory_xact_lock(hashtext('fsv-problem-hub:spravci')); -- dva správci se nesmí odebrat navzájem současně
+  perform pg_advisory_xact_lock(hashtext('fsv-bridge:spravci')); -- dva správci se nesmí odebrat navzájem současně
   select a.user_id into v_id from public.admins a join auth.users u on u.id = a.user_id
    where lower(u.email) = lower(btrim(p_email));
   if v_id is null then
@@ -340,7 +340,7 @@ begin
   end if;
   insert into public.admins (user_id, email) values (v_id, lower(p_email))
     on conflict (user_id) do update set email = excluded.email;
-  return 'OK: ' || lower(p_email) || ' je správcem FSv Problem Hub.';
+  return 'OK: ' || lower(p_email) || ' je správcem FSv Bridge.';
 end;
 $$;
 
@@ -409,7 +409,7 @@ begin
       -- bez osobních údajů: jen číslo poptávky
       perform net.http_post(
         url     := v_url,
-        body    := jsonb_build_object('text', 'Nová poptávka ' || new.cislo || ' ve FSv Problem Hub – otevřete administraci.'),
+        body    := jsonb_build_object('text', 'Nová poptávka ' || new.cislo || ' ve FSv Bridge – otevřete administraci.'),
         headers := '{"Content-Type": "application/json"}'::jsonb
       );
     exception when others then
@@ -452,7 +452,7 @@ begin
   begin
     perform net.http_post(
       url     := v_url,
-      body    := jsonb_build_object('text', 'FSv Problem Hub – nové poptávky: ' || v_nove || ', bez odpovědi po lhůtě: '
+      body    := jsonb_build_object('text', 'FSv Bridge – nové poptávky: ' || v_nove || ', bez odpovědi po lhůtě: '
                  || v_pozde || case when v_pozde > 0 then ' (' || v_cisla || ')' else '' end || '. Otevřete administraci.'),
       headers := '{"Content-Type": "application/json"}'::jsonb
     );
@@ -549,7 +549,7 @@ begin
 end;
 $$;
 
--- Číslo poptávky PH-RRRR-NNNN (od 10 000 pětimístné – lpad by delší číslo ořízl).
+-- Číslo poptávky FSVB-RRRR-NNNN (od 10 000 pětimístné – lpad by delší číslo ořízl).
 create or replace function private.nove_cislo()
 returns text
 language sql
@@ -557,7 +557,7 @@ volatile
 security definer
 set search_path = ''
 as $$
-  select 'PH-' || to_char(now() at time zone 'Europe/Prague', 'YYYY') || '-'
+  select 'FSVB-' || to_char(now() at time zone 'Europe/Prague', 'YYYY') || '-'
          || lpad(n::text, greatest(4, length(n::text)), '0')
     from (select nextval('public.poptavky_cislo_seq') as n) s;
 $$;
@@ -639,7 +639,7 @@ begin
 
   -- 2) limity: nad 5/h z adresy (IPv6 po /64) nebo 100/h celkem jde poptávka do karantény,
   --    nad 20/h z adresy nebo 500/h celkem se odmítne
-  perform pg_advisory_xact_lock(hashtext('fsv-problem-hub:limity'));
+  perform pg_advisory_xact_lock(hashtext('fsv-bridge:limity'));
   v_headers := coalesce(nullif(current_setting('request.headers', true), ''), '{}')::jsonb;
   v_ip := coalesce(nullif(v_headers ->> 'cf-connecting-ip', ''), nullif(v_headers ->> 'x-real-ip', ''),
                    nullif(btrim(split_part(coalesce(v_headers ->> 'x-forwarded-for', ''), ',', 1)), ''), '');
@@ -759,7 +759,7 @@ begin
   ) then
     return false;
   end if;
-  perform pg_advisory_xact_lock(hashtext('fsv-problem-hub:prilohy:' || v_folder));
+  perform pg_advisory_xact_lock(hashtext('fsv-bridge:prilohy:' || v_folder));
   select count(*) into v_cnt from storage.objects o
    where o.bucket_id = 'prilohy' and o.name like v_folder || '/%' and o.name not like v_folder || '/interni/%';
   if v_cnt >= 5 then
@@ -920,8 +920,10 @@ create policy "foto: spravce maze" on storage.objects for delete to authenticate
 do $$
 begin
   create extension if not exists pg_cron with schema pg_catalog;
-  perform cron.schedule('fsv-problem-hub-uklid', '*/15 * * * *', 'select private.cleanup()');
-  perform cron.schedule('fsv-problem-hub-souhrn', '30 5 * * 1-5', 'select private.denni_souhrn()');
+  -- úlohy z doby před přejmenováním aplikace (FSv Bridge) zrušíme, ať neběží dvakrát
+  perform cron.unschedule(jobid) from cron.job where jobname in ('fsv-problem-hub-uklid', 'fsv-problem-hub-souhrn');
+  perform cron.schedule('fsv-bridge-uklid', '*/15 * * * *', 'select private.cleanup()');
+  perform cron.schedule('fsv-bridge-souhrn', '30 5 * * 1-5', 'select private.denni_souhrn()');
 exception when others then
   raise notice 'pg_cron není k dispozici (%). Zapněte jej v Database → Extensions a spusťte skript znovu.', sqlerrm;
 end

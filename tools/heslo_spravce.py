@@ -29,7 +29,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Heslo správce pro ukázkový režim FSv Problem Hub")
+    ap = argparse.ArgumentParser(description="Heslo správce pro ukázkový režim FSv Bridge")
     ap.add_argument("--email", help="přihlašovací e-mail (jinak zůstane současný)")
     ap.add_argument("--stdin", action="store_true", help="heslo načíst ze standardního vstupu (pro skripty)")
     args = ap.parse_args()
