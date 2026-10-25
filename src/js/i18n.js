@@ -44,13 +44,13 @@ export function setLang(l) {
   } catch { /* adresu neměníme */ }
 }
 
-// Pevné texty stránky (index.html): data-i18n = text, data-i18n-html = text se značkami, data-i18n-aria / -title = atribut
+// Pevné texty stránky (index.html): data-i18n = text, data-i18n-html = text se značkami, data-i18n-aria / -title / -alt = atribut;
+// obrázek s data-src-en (anglická verze loga) se v angličtině přepne na tento soubor
 const STATIC = {
   skip: ['Přeskočit na obsah', 'Skip to content'],
-  home: ['FSv Bridge – úvodní stránka', 'FSv Bridge – home page'],
+  home: ['FSv Bridge, Fakulta stavební ČVUT v Praze – úvodní stránka', 'FSv Bridge, Faculty of Civil Engineering, CTU in Prague – home page'],
   faculty: ['Fakulta stavební ČVUT v Praze', 'Faculty of Civil Engineering, CTU in Prague'],
-  facultyShort: ['ČVUT v Praze', 'CTU in Prague'],
-  tagline: ['spolupráce s praxí', 'industry cooperation'],
+  tagline: ['Most mezi stavební praxí a výzkumem', 'Bridging construction practice and research'],
   mainNav: ['Hlavní navigace', 'Main navigation'],
   navOffer: ['Co umíme', 'Our expertise'],
   navRefs: ['Realizované projekty', 'Projects'],
@@ -78,6 +78,12 @@ export function applyStatic(root = document) {
   root.querySelectorAll('[data-i18n-html]').forEach((el) => { const s = v(el.dataset.i18nHtml); if (s != null) el.innerHTML = s; });
   root.querySelectorAll('[data-i18n-aria]').forEach((el) => { const s = v(el.dataset.i18nAria); if (s != null) el.setAttribute('aria-label', s); });
   root.querySelectorAll('[data-i18n-title]').forEach((el) => { const s = v(el.dataset.i18nTitle); if (s != null) el.setAttribute('title', s); });
+  root.querySelectorAll('[data-i18n-alt]').forEach((el) => { const s = v(el.dataset.i18nAlt); if (s != null) el.setAttribute('alt', s); });
+  root.querySelectorAll('img[data-src-en]').forEach((el) => {
+    el.dataset.srcCs ||= el.getAttribute('src');
+    const src = lang === 'en' ? el.dataset.srcEn : el.dataset.srcCs;
+    if (el.getAttribute('src') !== src) el.setAttribute('src', src);
+  });
 }
 
 // Vlajka jazyka, na který se přepíná (na české stránce britská, na anglické česká)

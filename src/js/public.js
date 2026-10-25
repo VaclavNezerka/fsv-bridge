@@ -204,7 +204,7 @@ export function viewHome() {
   return {
     title: L('Úvod', 'Home'),
     html: `<section class="hero"><div class="wrap hero-grid"><div>
-        <p class="eyebrow">${L('Fakulta stavební ČVUT v Praze · spolupráce s praxí', 'Faculty of Civil Engineering, CTU in Prague · industry cooperation')}</p>
+        <p class="eyebrow">${L('Most mezi stavební praxí a výzkumem', 'Bridging construction practice and research')}</p>
         <h1>${L('Potřebujete zkoušku, měření, posudek, průmyslový vývoj nebo experimentální výzkum?', 'Do you need testing, measurements, an expert assessment, industrial development or experimental research?')}</h1>
         <p class="lead">${L(`Využijte know-how a výzkumný potenciál fakulty. Napište pár vět – koordinátor vybere vhodné pracoviště a zpravidla do ${days()} pracovních dnů se vám ozve. Nezávazně a bez registrace.`,
           `Draw on the faculty's know-how and research capacity. Describe your needs in a few sentences – our coordinator will find the right department and will usually get back to you within ${days()} working days. No obligation, no registration.`)}</p>
@@ -384,7 +384,7 @@ export function viewOffer(id) {
   const k = kat(n.kategorie);
   const refs = state.catalog.reference.filter((r) => r.pracoviste === n.pracoviste).slice(0, 3);
   const web = safeUrl(n.web);
-  // Přehled expertízy slouží jen k orientaci: téma se nepoptává samostatně a místo jmen garantů se uvádí pracoviště.
+  // Místo jmen garantů se uvádí pracoviště; poptávku k tématu dostane koordinátor i toto pracoviště.
   const facts = [[L('Pracoviště', 'Department'), deptName(n.pracoviste) + (labName(n) ? `, ${labName(n)}` : '')], [L('Obor', 'Field'), k?.nazev],
     [L('Hlavní výstupy', 'Main outputs'), n.vystupy], [L('Formy spolupráce', 'Forms of cooperation'), n.formy]].filter(([, v]) => v);
   return {
@@ -403,7 +403,8 @@ export function viewOffer(id) {
           ${n.klicova_slova?.length || n.horizon ? `<div class="kw-block">${n.klicova_slova?.length ? `<ul class="tags">${n.klicova_slova.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}${n.horizon ? `<p class="small muted">${icon('globe', 16)} ${L('Vhodné i do evropských projektů Horizont Evropa', 'Also suitable for Horizon Europe projects')} (${esc(n.horizon)})</p>` : ''}</div>` : ''}
           ${web ? `<p><a href="${esc(web)}" target="_blank" rel="noopener noreferrer">${icon('external', 17)} ${L('Více informací na webu pracoviště', "More on the department's website")}</a></p>` : ''}
         </article>
-        <aside class="detail-side"><dl class="facts card-facts">${facts.map(([t, v]) => `<dt>${esc(t)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></aside>
+        <aside class="detail-side"><dl class="facts card-facts">${facts.map(([t, v]) => `<dt>${esc(t)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+          <a class="btn btn-primary btn-block" href="#/poptavka?tema=${encodeURIComponent(n.id)}">${icon('mail', 18)} ${L('Poptat u tohoto pracoviště', 'Enquire with this department')}</a></aside>
       </div>
       ${refs.length ? `<section class="section"><div class="section-head"><h2>${L('Realizované projekty pracoviště', 'Projects of this department')}</h2><a href="#/reference?p=${encodeURIComponent(n.pracoviste)}">${L('Všechny projekty pracoviště', 'All projects of this department')} ${icon('arrow', 18)}</a></div>
         <div class="grid cards-3">${refs.map(refCard).join('')}</div></section>` : ''}
@@ -509,8 +510,9 @@ function fieldHtml(id, label, { type = 'text', req = false, hint = '', auto = ''
     <input id="f-${id}" name="${id}" type="${type}"${auto ? ` autocomplete="${auto}"` : ''}${max ? ` maxlength="${max}"` : ''}${inputmode ? ` inputmode="${inputmode}"` : ''}${req ? ' aria-required="true"' : ''} aria-describedby="${hint ? 'h-' + id + ' ' : ''}e-${id}"></div>`;
 }
 
-export function viewRequest() {
+export function viewRequest(params) {
   const c = CONFIG.coordinator;
+  const tema = offerById(params?.get('tema') || ''); // poptávka z detailu tématu
   return {
     title: L('Zadat poptávku', 'Submit an enquiry'),
     html: `<div class="wrap page request-page">
@@ -521,6 +523,10 @@ export function viewRequest() {
       <div class="request-grid">
         <form class="card form" data-form="poptavka" novalidate>
           <div class="error-summary" id="err-sum" tabindex="-1" role="alert" hidden></div>
+          ${tema ? `<div class="topic-link"><p class="eyebrow">${L('Poptávka k tématu', 'Enquiry about the topic')}</p>
+            <p class="topic-link-title"><a href="#/nabidka/${encodeURIComponent(tema.id)}">${esc(tema.nazev)}</a></p>
+            <p class="small">${esc(L(`Poptávku dostane koordinátor i ${deptName(tema.pracoviste)}.`, `The enquiry will go to our coordinator and to the ${deptName(tema.pracoviste)}.`))}
+              <a href="#/poptavka">${L('Zadat obecnou poptávku', 'Send a general enquiry instead')}</a></p></div>` : ''}
           <div class="field" data-field="popis">
             <label for="f-popis">${L('Co potřebujete?', 'What do you need?')} <span class="req" aria-hidden="true">*</span></label>
             <p class="hint" id="h-popis">${L('O jakou stavbu nebo materiál jde, co je potřeba udělat a do kdy. Důvěrné podrobnosti zatím neuvádějte.',
@@ -548,13 +554,14 @@ export function viewRequest() {
               ${TYPY().map(([v, l]) => `<label class="radio"><input type="radio" name="typ" value="${v}"> ${esc(l)}</label>`).join('')}
             </div>
             <label class="check-inline"><input type="checkbox" name="nda"> ${L('Podrobnosti jsou důvěrné – nejdřív chci dohodu o mlčenlivosti', 'The details are confidential – I would like a non-disclosure agreement first')}</label>
+            <label class="check-inline"><input type="checkbox" name="znalecky"> ${L('Potřebuji znalecký posudek (pro soud, úřad nebo jiné řízení)', 'I need an expert witness report (for court, authorities or other proceedings)')}</label>
           </fieldset>
           <fieldset class="field group"><legend>${L('Na koho se máme obrátit', 'Your contact details')}</legend>
             <div class="grid-2">
               ${fieldHtml('jmeno', L('Jméno a příjmení', 'Full name'), { req: true, auto: 'name', max: 120 })}
               ${fieldHtml('organizace', L('Organizace', 'Organization'), { auto: 'organization', max: 200 })}
               ${fieldHtml('email', L('E-mail', 'Email'), { type: 'email', req: true, auto: 'email', max: 200 })}
-              ${fieldHtml('telefon', L('Telefon', 'Phone'), { type: 'tel', auto: 'tel', max: 20, inputmode: 'tel' })}
+              ${fieldHtml('telefon', L('Telefon', 'Phone'), { type: 'tel', req: true, auto: 'tel', max: 20, inputmode: 'tel' })}
             </div>
           </fieldset>
           <div class="hp" aria-hidden="true"><label for="f-web">${L('Toto pole nevyplňujte', 'Leave this field empty')}</label><input id="f-web" name="web" type="text" tabindex="-1" autocomplete="off"></div>
@@ -596,13 +603,14 @@ export function viewRequest() {
       FIELDS.forEach((k) => { if (draft[k]) form.elements[k].value = draft[k]; });
       if (draft.typ) form.elements.typ.value = draft.typ;
       form.elements.nda.checked = !!draft.nda;
+      form.elements.znalecky.checked = !!draft.znalecky;
       // z neúspěšného hledání v přehledu expertízy přeneseme hledaný výraz jako začátek popisu
       const pre = ss.get('ph-prefill');
       if (pre && !form.elements.popis.value) { form.elements.popis.value = pre + ' – '; ss.del('ph-prefill'); }
 
       const saveDraft = () => {
         const d = Object.fromEntries(FIELDS.map((k) => [k, form.elements[k].value]));
-        Object.assign(d, { typ: form.elements.typ.value, nda: form.elements.nda.checked });
+        Object.assign(d, { typ: form.elements.typ.value, nda: form.elements.nda.checked, znalecky: form.elements.znalecky.checked });
         ss.set(DRAFT_KEY, JSON.stringify(d));
       };
       const counter = () => {
@@ -676,7 +684,7 @@ export function viewRequest() {
       form.addEventListener('focusin', () => { pow.prepare().catch(() => {}); }, { once: true });
       form.addEventListener('input', (e) => {
         const k = e.target.name;
-        if (![...FIELDS, 'typ', 'nda'].includes(k)) return;
+        if (![...FIELDS, 'typ', 'nda', 'znalecky'].includes(k)) return;
         saveDraft();
         if (k === 'popis') counter();
         // opravené pole přestane chybu ukazovat hned (souhrn chyb se obnoví při dalším odeslání)
@@ -719,7 +727,8 @@ export function viewRequest() {
           setProgress(L('Odesíláme poptávku…', 'Sending your enquiry…'), 0.25);
           const payload = {
             ...data, web: form.elements.web.value, klic, jazyk: lang,
-            typ_zadavatele: form.elements.typ.value || '', nda: form.elements.nda.checked,
+            typ_zadavatele: form.elements.typ.value || '', nda: form.elements.nda.checked, znalecky: form.elements.znalecky.checked,
+            nabidka_id: tema?.id || '',
           };
           let res;
           try {
@@ -817,7 +826,7 @@ const DOCS = {
       <p>We need your data to reply to you, assess your enquiry and, where appropriate, prepare an offer of cooperation.</p>
       <h2>Controller</h2><p>Czech Technical University in Prague, Jugoslávských partyzánů 1580/3, 160 00 Prague 6, Czech Republic, company ID (IČO) 68407700. The processing is carried out by the Faculty of Civil Engineering, Thákurova 2077/7, 166 29 Prague 6.
       Coordinator: ${esc(CONFIG.coordinator.name)}, ${coordLink()}. CTU Data Protection Officer: ${dpoLink()}.</p>
-      <h2>What data we process</h2><ul><li>your name, email address and, where provided, your phone number and the name of your organization;</li><li>the text of your enquiry, attachments and optional details (who is enquiring, request for confidentiality);</li><li>for completed cooperation, also documents relating to the contract (offers, contracts, reports), your feedback and contacts for further cooperation;</li><li>to prevent abuse, a short-lived hash of your IP address, which is deleted automatically within 24 hours at the latest.</li></ul>
+      <h2>What data we process</h2><ul><li>your name, email address and phone number and, where provided, the name of your organization;</li><li>the text of your enquiry, attachments, the topic from our overview of expertise if you enquire about one, and optional details (who is enquiring, request for confidentiality, request for an expert witness report);</li><li>for completed cooperation, also documents relating to the contract (offers, contracts, reports), your feedback and contacts for further cooperation;</li><li>to prevent abuse, a short-lived hash of your IP address, which is deleted automatically within 24 hours at the latest.</li></ul>
       <h2>Purpose and legal basis</h2><p>We process the data to handle your enquiry and to negotiate a possible contract. If you are enquiring on your own behalf, the legal basis is steps taken prior to entering into a contract (Article 6(1)(b) GDPR). If you are a contact person of an organization, the legal basis is our legitimate interest in responding to the enquiry and negotiating cooperation (Article 6(1)(f) GDPR). Without your name and email address we cannot handle the enquiry. After the cooperation has ended, we use the data to evaluate it and to arrange any follow-up cooperation with your organization (legitimate interest, Article 6(1)(f) GDPR); you may object to this at any time. We do not send you marketing communications.</p>
       <h2>Who can see the data</h2><p>Your enquiry, contact details and attachments are seen by the coordinator and the department handling the enquiry and, to the extent necessary, by the audit bodies of the project that funds FSv Bridge. None of this is published.</p>
       <h2>Processors and transfers outside the EU</h2><p>Enquiries and attachments are stored with the database service provider Supabase, Inc. in a data centre in the EU (Frankfurt am Main). The website is hosted on GitHub Pages (GitHub, Inc.), which processes visitors' IP addresses in technical logs when pages are displayed; the database provider also keeps technical logs containing IP addresses. Both providers are based in the USA; transfers of data are covered by safeguards under Chapter V GDPR (standard contractual clauses or the EU–US Data Privacy Framework).</p>
@@ -828,7 +837,7 @@ const DOCS = {
       <p>Údaje potřebujeme, abychom vám mohli odpovědět, posoudit vaši poptávku a případně připravit nabídku spolupráce.</p>
       <h2>Správce</h2><p>České vysoké učení technické v Praze, Jugoslávských partyzánů 1580/3, 160 00 Praha 6, IČO 68407700. Zpracování zajišťuje Fakulta stavební, Thákurova 2077/7, 166 29 Praha 6.
       Koordinátor: ${esc(CONFIG.coordinator.name)}, ${coordLink()}. Pověřenec pro ochranu osobních údajů ČVUT: ${dpoLink()}.</p>
-      <h2>Jaké údaje zpracováváme</h2><ul><li>jméno a příjmení, e-mail, případně telefon a název organizace,</li><li>text poptávky, přílohy a nepovinná upřesnění (kdo poptává, požadavek na mlčenlivost),</li><li>u realizované spolupráce také dokumenty k zakázce (nabídky, smlouvy, protokoly), vaši zpětnou vazbu a kontakty pro další spolupráci,</li><li>pro ochranu před zneužitím krátkodobě otisk (hash) IP adresy – mažeme jej automaticky nejpozději do 24 hodin.</li></ul>
+      <h2>Jaké údaje zpracováváme</h2><ul><li>jméno a příjmení, e-mail a telefon, případně název organizace,</li><li>text poptávky, přílohy, téma z přehledu expertízy, pokud poptáváte přímo k němu, a nepovinná upřesnění (kdo poptává, požadavek na mlčenlivost, žádost o znalecký posudek),</li><li>u realizované spolupráce také dokumenty k zakázce (nabídky, smlouvy, protokoly), vaši zpětnou vazbu a kontakty pro další spolupráci,</li><li>pro ochranu před zneužitím krátkodobě otisk (hash) IP adresy – mažeme jej automaticky nejpozději do 24 hodin.</li></ul>
       <h2>Účel a právní základ</h2><p>Údaje zpracováváme k vyřízení poptávky a k jednání o případné smlouvě. Poptáváte-li sami za sebe, je právním základem jednání o smlouvě (čl. 6 odst. 1 písm. b) GDPR). Jste-li kontaktní osobou organizace, je jím náš oprávněný zájem odpovědět na poptávku a jednat o spolupráci (čl. 6 odst. 1 písm. f) GDPR). Bez jména a e-mailu poptávku vyřídit nelze. Po skončení spolupráce údaje použijeme k jejímu vyhodnocení a k domluvě případné navazující spolupráce s vaší organizací (oprávněný zájem, čl. 6 odst. 1 písm. f) GDPR); proti tomu můžete kdykoli vznést námitku. Obchodní sdělení vám nezasíláme.</p>
       <h2>Kdo údaje uvidí</h2><p>Poptávku, kontaktní údaje a přílohy vidí koordinátor a pracoviště, které poptávku vyřizuje, v nezbytném rozsahu také kontrolní orgány projektu, z něhož je FSv Bridge financován. Nic z toho nezveřejňujeme.</p>
       <h2>Zpracovatelé a předání mimo EU</h2><p>Poptávky a přílohy ukládáme u poskytovatele databázové služby Supabase, Inc. v datovém centru v EU (Frankfurt nad Mohanem). Web je hostován službou GitHub Pages (GitHub, Inc.), která při zobrazení stránek zpracovává IP adresy návštěvníků v technických záznamech; technické záznamy s IP adresami vede i poskytovatel databáze. Oba poskytovatelé sídlí v USA, předání údajů zajišťují záruky podle kapitoly V GDPR (standardní smluvní doložky, případně rámec ochrany osobních údajů EU–USA).</p>

@@ -8,7 +8,7 @@ const dokument = (nazev, radky) => ['VZOROVÝ DOKUMENT – FSv Bridge', '', naze
 
 export function vzory(kdo) {
   const zaklad = {
-    nabidka_id: null, nabidka_nazev: '', klic: null, nda: false, telefon: '', pracoviste: null, poznamka: '',
+    nabidka_id: null, nabidka_nazev: '', nabidka_pracoviste: '', klic: null, nda: false, znalecky: false, telefon: '', pracoviste: null, poznamka: '',
     prvni_odpoved: null, predano_kdy: null, garant: '', role_fakulty: '', hodnota: null, typ_smlouvy: '', cislo_smlouvy: '',
     duvod: '', spokojenost: null, zpetna_vazba: '', spoluprace: false, kontakty_spoluprace: '', vzor: true,
   };

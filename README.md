@@ -2,7 +2,7 @@
 
 Webová aplikace, přes kterou firmy a instituce z praxe najdou odborníky Fakulty stavební ČVUT v Praze a zadají jim poptávku. Vzniká v rámci klíčové aktivity KA4 projektu PPSŘ 03 (v projektové dokumentaci pod původním názvem „FSv Problem Hub“).
 
-- **Pro zadavatele:** prohlédne si přehled expertízy pracovišť a realizované výzkumné projekty. Pak popíše, co potřebuje (poptávka se neváže na konkrétní téma), případně přiloží soubory a odešle. Nemusí se registrovat ani vyplňovat CAPTCHA a zpravidla do 10 pracovních dnů se mu ozve koordinátor.
+- **Pro zadavatele:** prohlédne si přehled expertízy pracovišť a realizované výzkumné projekty. Pak popíše, co potřebuje, případně přiloží soubory a odešle. Poptávku zadá obecně, nebo přímo k tématu z přehledu – tu pak dostane koordinátor i pracoviště. Nemusí se registrovat ani vyplňovat CAPTCHA a zpravidla do 10 pracovních dnů se mu ozve koordinátor.
 - **Pro koordinátora (správce):** jako jediný pracuje pod heslem a s dvoufázovým ověřením. Vidí poptávky a zakázky se stavem rozpracovanosti, kontakty a přílohy, předává je pracovištím, ke každé zakázce ukládá vlastní dokumenty, hodnotu, poznámky, zpětnou vazbu a kontakty pro další spolupráci a upravuje přehled expertízy a projektů.
 - **Česky i anglicky:** veřejná část má anglickou verzi, přepíná se vlajkou vpravo nahoře vedle zámku Admin. Administrace je česká.
 
@@ -26,6 +26,7 @@ src/                         web: HTML, CSS a JavaScript bez knihoven a bez sest
   data/expertiza.json        veřejný přehled expertízy a projektů (bez kontaktů pracovníků)
   data/expertiza.en.json     anglický překlad přehledu (doplňuje české položky podle id)
   img/exp/                   fotografie z podkladů pracovišť
+  img/logo-fsv*.svg          oficiální logo fakulty (česky, anglicky, bílé, zkratka) z cvut.cz/logo-a-graficky-manual
   img/og.png                 náhled odkazu pro e-mail a sociální sítě (tools/og_obrazek.py)
   video/, img/tech/          krátká videa sekce „Moderní metody a laboratoře“ (WebM + MP4) a jejich náhledy
 supabase/schema.sql          databáze, pravidla přístupu a úložiště souborů
@@ -37,7 +38,7 @@ tools/foto-cache.json        mezipaměť převodu fotografií (zrychluje import)
 tools/serve.py               lokální náhled
 tools/heslo_spravce.py       heslo správce pro ukázkový režim (do kódu se uloží jen otisk)
 tools/tech_videa.py          výpočet videí na úvod (laserové skenování, DIC, model MKP; potřebuje numpy, Pillow, ffmpeg)
-tools/og_obrazek.py          náhledový obrázek odkazu
+tools/og_obrazek.py          náhledový obrázek odkazu (bílé logo fakulty v PNG: tools/og-logo-fsv.png)
 build.py                     sestavení pro GitHub Pages s bezpečnostními kontrolami
 .github/workflows/pages.yml  nasazení na GitHub Pages po každé změně a každou hodinu
 ```

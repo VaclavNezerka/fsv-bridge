@@ -200,11 +200,12 @@ export function viewRequests() {
       const box = $('#req', root);
       let list;
       try { list = await api.requests(); } catch (e) { box.innerHTML = failBox(e); return; }
-      const f = { stav: '', q: '', zobrazit: '' }; // zobrazit: '' | 'lhuta' | 'skartace' | 'spoluprace'
+      const f = { stav: '', druh: '', q: '', zobrazit: '' }; // zobrazit: '' | 'lhuta' | 'skartace' | 'spoluprace'; druh: '' | 'tema' | 'znalecky'
       box.innerHTML = `<div id="rq-stats"></div>
         <div class="admin-toolbar">
           <div class="searchbox">${icon('search', 18)}<label class="sr-only" for="rq-q">Hledat v poptávkách</label><input id="rq-q" type="search" placeholder="Hledat jméno, organizaci, text…"></div>
           <div class="field-inline"><label for="rq-s">Stav</label><select id="rq-s"><option value="">Všechny kromě spamu</option>${Object.entries(STAVY).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('')}</select></div>
+          <div class="field-inline"><label for="rq-d">Druh</label><select id="rq-d"><option value="">Všechny poptávky</option><option value="tema">K tématu z přehledu</option><option value="znalecky">Znalecké posudky</option></select></div>
           <button type="button" class="btn btn-primary btn-sm" data-act="new">${icon('plus', 17)} Zapsat poptávku</button>
           <button type="button" class="btn btn-secondary btn-sm" data-act="csv">${icon('download', 17)} Export CSV</button>
         </div>
@@ -238,6 +239,7 @@ export function viewRequests() {
           if (f.zobrazit === 'skartace') return keSkartaci(r);
           if (f.zobrazit === 'spoluprace') return r.spoluprace && !anonymni(r);
           if (f.stav ? r.stav !== f.stav : r.stav === 'spam') return false;
+          if ((f.druh === 'tema' && !r.nabidka_id) || (f.druh === 'znalecky' && !r.znalecky)) return false;
           return !q || norm([r.cislo, r.jmeno, r.organizace, r.email, r.popis].join(' ')).includes(q);
         });
         $('#rq-flags', box).innerHTML = f.zobrazit ? `<p class="filter-flag">${icon('info', 18)} ${{ lhuta: 'Poptávky bez první odpovědi po lhůtě.', skartace: 'Poptávky po době uchování – anonymizujte je, spam smažte.', spoluprace: 'Zadavatelé se zájmem o další spolupráci – kontakty najdete v detailu zakázky.' }[f.zobrazit]} <button type="button" class="linklike" data-show="">Zobrazit vše</button></p>` : '';
@@ -248,7 +250,7 @@ export function viewRequests() {
             <td><button type="button" class="linklike strong" data-open="${esc(r.id)}">${esc(r.cislo)}</button>${r.vzor ? '<span class="wait">vzorová zakázka</span>' : ''}${r.zdroj && r.zdroj !== 'formular' ? `<span class="wait">${esc(ZDROJ[r.zdroj] || r.zdroj)}</span>` : ''}</td>
             <td>${esc(fmtDateTime(r.vytvoreno))}${cekaNaOdpoved(r) ? waitLabel(r) : ''}</td>
             <td><strong>${esc(r.jmeno)}</strong>${r.organizace ? `<br><span class="muted small">${esc(r.organizace)}</span>` : ''}${r.typ_zadavatele ? `<span class="wait">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.jazyk === 'en' ? '<span class="wait">anglicky</span>' : ''}</td>
-            <td>${esc(truncate(r.popis, 110))}${r.nda ? ` <span class="badge tone-progress">NDA</span>` : ''}</td>
+            <td>${esc(truncate(r.popis, 110))}${r.nda ? ` <span class="badge tone-progress">NDA</span>` : ''}${r.znalecky ? ' <span class="badge tone-real">Znalecký posudek</span>' : ''}${r.nabidka_id ? `<span class="wait">Téma ${esc(r.nabidka_pracoviste || '')}: ${esc(truncate(r.nabidka_nazev || '', 70))}</span>` : ''}</td>
             <td>${r.pocet_priloh ? `${icon('clip', 16)} ${r.pocet_priloh}` : '<span class="muted">–</span>'}</td>
             <td>${badge(r.stav)}${r.hodnota ? `<span class="wait">${esc(kc(r.hodnota))}</span>` : ''}${r.spoluprace ? '<span class="wait">zájem o další spolupráci</span>' : ''}</td></tr>`).join('')}</tbody></table></div>`
           : `<div class="empty"><p>${list.length ? 'Žádná poptávka neodpovídá filtru.' : 'Zatím nepřišla žádná poptávka.'}</p>${list.length ? '' : '<p><a href="#/poptavka">Vyzkoušet formulář poptávky</a></p>'}</div>`;
@@ -258,6 +260,7 @@ export function viewRequests() {
       render();
       $('#rq-q', box).addEventListener('input', debounce((e) => { f.q = e.target.value; render(); }, 150));
       $('#rq-s', box).addEventListener('change', (e) => { f.stav = e.target.value; f.zobrazit = ''; render(); });
+      $('#rq-d', box).addEventListener('change', (e) => { f.druh = e.target.value; render(); });
       box.addEventListener('click', async (e) => {
         const o = e.target.closest('[data-open]');
         if (o) openRequest(list.find((r) => r.id === o.dataset.open), o, reload, list);
@@ -276,7 +279,8 @@ export function viewRequests() {
 function exportCsv(list) {
   const cols = [['cislo', 'Číslo'], ['vytvoreno', 'Přijato'], ['zdroj', 'Zdroj'], ['stav', 'Stav'], ['typ_zadavatele', 'Typ zadavatele'],
     ['jmeno', 'Jméno'], ['organizace', 'Organizace'], ['email', 'E-mail'], ['telefon', 'Telefon'],
-    ['jazyk', 'Jazyk'], ['nda', 'NDA'], ['pracoviste', 'Předáno pracovišti'], ['predano_kdy', 'Předáno dne'], ['prvni_odpoved', 'První odpověď'],
+    ['jazyk', 'Jazyk'], ['nda', 'NDA'], ['znalecky', 'Znalecký posudek'], ['nabidka_nazev', 'Téma z přehledu'], ['nabidka_pracoviste', 'Pracoviště tématu'],
+    ['pracoviste', 'Předáno pracovišti'], ['predano_kdy', 'Předáno dne'], ['prvni_odpoved', 'První odpověď'],
     ['garant', 'Garant'], ['role_fakulty', 'Role fakulty'], ['hodnota', 'Hodnota (Kč bez DPH)'], ['typ_smlouvy', 'Typ smlouvy'],
     ['cislo_smlouvy', 'Číslo smlouvy'], ['duvod', 'Důvod nerealizace'], ['spokojenost', 'Spokojenost (1–5)'], ['zpetna_vazba', 'Zpětná vazba'],
     ['spoluprace', 'Zájem o další spolupráci'], ['kontakty_spoluprace', 'Kontakty pro další spolupráci'],
@@ -287,7 +291,7 @@ function exportCsv(list) {
     if (maps[k]) return maps[k][r[k]] || r[k] || '';
     if (['vytvoreno', 'predano_kdy'].includes(k)) return fmtDateTime(r[k]);
     if (k === 'prvni_odpoved') return fmtDate(r[k]);
-    if (k === 'nda' || k === 'spoluprace') return r[k] ? 'ano' : '';
+    if (['nda', 'znalecky', 'spoluprace'].includes(k)) return r[k] ? 'ano' : '';
     return r[k] ?? '';
   };
   // hodnoty od zadavatelů nesmí Excel spustit jako vzorec (=, +, -, @) – apostrof je skryje
@@ -314,6 +318,8 @@ function requestMails(r, deptName) {
     `E-mail: ${r.email}`,
     r.telefon ? `Telefon: ${r.telefon}` : null,
     r.jazyk === 'en' ? 'Zadavatel komunikuje anglicky (poptávka z anglické verze webu).' : null,
+    r.nabidka_nazev ? `Téma z přehledu expertízy: ${r.nabidka_nazev}` : null,
+    r.znalecky ? 'Zadavatel žádá znalecký posudek.' : null,
     '', 'Text poptávky:', popis,
     r.pocet_priloh ? `\nPřílohy (${r.pocet_priloh}) jsou uložené v administraci FSv Bridge, na požádání je přepošlu.` : null,
   ].filter((x) => x !== null).join('\n');
@@ -388,7 +394,8 @@ async function openRequest(r, returnTo, onChange, list = []) {
   const garanti = (kod) => [...new Set((cat.nabidky || []).filter((n) => kod && n.pracoviste === kod)
     .flatMap((n) => (n.kontakty || []).map((k) => k.email)).filter(Boolean))];
   const deptName = (kod) => depts.find((d) => d.kod === kod)?.nazev || '';
-  let mails = requestMails(r, deptName(r.pracoviste));
+  const prac = r.pracoviste || r.nabidka_pracoviste || ''; // poptávka k tématu míří na jeho pracoviště
+  let mails = requestMails(r, deptName(prac));
   const rel = related(r, list);
   const evidenceOpen = ['nabidka', 'realizace', 'dokonceno', 'nerealizovano'].includes(r.stav);
   const spolOpen = ['realizace', 'dokonceno'].includes(r.stav) || r.spokojenost || r.zpetna_vazba || r.spoluprace || r.kontakty_spoluprace;
@@ -396,8 +403,9 @@ async function openRequest(r, returnTo, onChange, list = []) {
   openDialog(`<div class="req-detail">
     <p class="eyebrow">${r.vzor ? 'Vzorová zakázka' : 'Poptávka'} ${esc(r.cislo)} · ${esc(fmtDateTime(r.vytvoreno))} · ${esc(ZDROJ[r.zdroj] || 'formulář')}</p>
     <h2 id="dlg-title">${esc(r.jmeno)}${r.organizace ? ` <span class="muted">(${esc(r.organizace)})</span>` : ''}</h2>
-    <p class="badge-row">${badge(r.stav)}${r.typ_zadavatele ? ` <span class="badge tone-info">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.jazyk === 'en' ? ' <span class="badge tone-info">Anglicky – odpovídat anglicky</span>' : ''}${r.nda ? ' <span class="badge tone-progress">Požaduje NDA – přílohy předat až po jejím uzavření</span>' : ''}${r.hodnota ? ` <span class="badge tone-real">${esc(kc(r.hodnota))} bez DPH</span>` : ''}</p>
+    <p class="badge-row">${badge(r.stav)}${r.typ_zadavatele ? ` <span class="badge tone-info">${esc(TYP_ZAD[r.typ_zadavatele])}</span>` : ''}${r.jazyk === 'en' ? ' <span class="badge tone-info">Anglicky – odpovídat anglicky</span>' : ''}${r.nda ? ' <span class="badge tone-progress">Požaduje NDA – přílohy předat až po jejím uzavření</span>' : ''}${r.znalecky ? ' <span class="badge tone-real">Znalecký posudek</span>' : ''}${r.hodnota ? ` <span class="badge tone-real">${esc(kc(r.hodnota))} bez DPH</span>` : ''}</p>
     ${stepper(r.stav, r.duvod)}
+    ${r.nabidka_id ? `<p class="note">${icon('target', 20)}<span>Poptávka k tématu <a href="#/nabidka/${encodeURIComponent(r.nabidka_id)}" target="_blank" rel="noopener">${esc(r.nabidka_nazev || r.nabidka_id)}</a>${r.nabidka_pracoviste ? ` – ${esc(deptName(r.nabidka_pracoviste) || r.nabidka_pracoviste)}` : ''}</span></p>` : ''}
     <div class="req-text">${esc(r.popis).replace(/\n/g, '<br>')}</div>
     <div class="req-cols">
       <section><h3>Kontakt</h3><ul class="contact">
@@ -416,16 +424,17 @@ async function openRequest(r, returnTo, onChange, list = []) {
     <div class="req-actions">
       ${r.email ? `<a class="btn btn-secondary btn-sm" href="${esc(mails.reply)}" data-act="reply" data-mail="reply">${icon('mail', 16)} Odpovědět zadavateli</a>
       <a class="btn btn-secondary btn-sm" href="${esc(mails.decline)}" data-act="reply" data-mail="decline">${icon('close', 16)} Zdvořile odmítnout</a>` : ''}
-      <a class="btn btn-secondary btn-sm" id="handover" href="${esc(mails.handover(garanti(r.pracoviste)))}" data-act="handover">${icon('arrow', 16)} Předat pracovišti e-mailem</a>
+      <a class="btn btn-secondary btn-sm" id="handover" href="${esc(mails.handover(garanti(prac)))}" data-act="handover">${icon('arrow', 16)} Předat pracovišti e-mailem</a>
       <button type="button" class="btn btn-secondary btn-sm" data-act="copy-summary">${icon('copy', 16)} Kopírovat souhrn</button>
     </div>
     <form data-form="req-edit" class="panel">
       <h3>Zpracování</h3>
       <div class="grid-2">
         <div class="field"><label for="r-stav">Stav</label><select id="r-stav" name="stav">${Object.entries(STAVY).map(([k, v]) => `<option value="${k}"${k === r.stav ? ' selected' : ''}>${esc(v.label)}</option>`).join('')}</select></div>
-        <div class="field"><label for="r-prac">Předáno pracovišti</label><select id="r-prac" name="pracoviste"><option value="">—</option>${depts.map((d) => `<option value="${esc(d.kod)}"${d.kod === r.pracoviste ? ' selected' : ''}>${esc(d.kod)} – ${esc(d.nazev)}</option>`).join('')}</select></div>
+        <div class="field"><label for="r-prac">Předáno pracovišti</label><select id="r-prac" name="pracoviste"><option value="">—</option>${depts.map((d) => `<option value="${esc(d.kod)}"${d.kod === prac ? ' selected' : ''}>${esc(d.kod)} – ${esc(d.nazev)}</option>`).join('')}</select></div>
         <div class="field"><label for="r-garant">Garant na pracovišti</label><input id="r-garant" name="garant" value="${esc(r.garant || '')}" placeholder="jméno"></div>
         <div class="field"><label for="r-typ">Typ zadavatele</label><select id="r-typ" name="typ_zadavatele">${options(TYP_ZAD, r.typ_zadavatele)}</select></div>
+        <div class="field field-check"><label class="check-inline"><input type="checkbox" name="znalecky"${r.znalecky ? ' checked' : ''}> Znalecký posudek</label></div>
       </div>
       <div class="field"><label for="r-note">Interní poznámky</label><textarea id="r-note" name="poznamka" rows="4">${esc(r.poznamka || '')}</textarea>
         <button type="button" class="btn-link small" data-act="note-date">${icon('clock', 15)} Vložit dnešní datum</button></div>
@@ -567,7 +576,7 @@ async function openRequest(r, returnTo, onChange, list = []) {
       role_fakulty: el.role_fakulty.value, hodnota: Number.isFinite(hodnota) ? hodnota : null, typ_smlouvy: el.typ_smlouvy.value,
       cislo_smlouvy: el.cislo_smlouvy.value.trim(), duvod: el.duvod.value,
       spokojenost: el.spokojenost.value ? Number(el.spokojenost.value) : null, zpetna_vazba: el.zpetna_vazba.value.trim(),
-      spoluprace: el.spoluprace.checked, kontakty_spoluprace: el.kontakty_spoluprace.value.trim(),
+      spoluprace: el.spoluprace.checked, kontakty_spoluprace: el.kontakty_spoluprace.value.trim(), znalecky: el.znalecky.checked,
     };
     if (changes.stav === 'nerealizovano' && !changes.duvod) {
       toast('U nerealizované poptávky vyberte prosím důvod (Evidence zakázky).', 'err');
@@ -614,6 +623,7 @@ function openNewRequest(returnTo, onChange) {
       <div class="field"><label for="n-org">Organizace</label><input id="n-org" name="organizace"></div>
       <div class="field"><label for="n-email">E-mail</label><input id="n-email" name="email" type="email"></div>
       <div class="field"><label for="n-tel">Telefon</label><input id="n-tel" name="telefon" type="tel"></div>
+      <div class="field field-check"><label class="check-inline"><input type="checkbox" name="znalecky"> Znalecký posudek</label></div>
     </div>
     <div class="field"><label for="n-popis">Co zadavatel potřebuje <span class="req" aria-hidden="true">*</span></label><textarea id="n-popis" name="popis" rows="5" required></textarea></div>
     <p class="field-error" id="n-err" role="alert" hidden></p>
@@ -624,6 +634,7 @@ function openNewRequest(returnTo, onChange) {
   fm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const d = Object.fromEntries(['zdroj', 'typ_zadavatele', 'jmeno', 'organizace', 'email', 'telefon', 'popis'].map((k) => [k, fm.elements[k].value.trim()]));
+    d.znalecky = fm.elements.znalecky.checked;
     if (d.jmeno.length < 2 || d.popis.length < 5) {
       const p = $('#n-err', fm);
       p.hidden = false;

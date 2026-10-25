@@ -39,7 +39,8 @@ export function validateRequest(d) {
   else if (t('jmeno').length > 120) e.jmeno = L('Jméno může mít nejvýše 120 znaků.', 'The name can be up to 120 characters.');
   if (!t('email')) e.email = L('Zadejte e-mail, na který se vám ozveme.', 'Please enter the email address we should reply to.');
   else if (!EMAIL_RE.test(t('email')) || t('email').length > 200) e.email = L('Zadejte e-mail ve tvaru jmeno@firma.cz.', 'Please enter an email address such as name@company.com.');
-  if (t('telefon') && !/^\+?[\d ()/-]{9,20}$/.test(t('telefon'))) e.telefon = L('Zadejte telefon ve tvaru +420 123 456 789.', 'Please enter the phone number in a format such as +420 123 456 789.');
+  if (!t('telefon')) e.telefon = L('Zadejte telefon, na kterém vás zastihneme.', 'Please enter a phone number where we can reach you.');
+  else if (!/^\+?[\d ()/-]{9,20}$/.test(t('telefon'))) e.telefon = L('Zadejte telefon ve tvaru +420 123 456 789.', 'Please enter the phone number in a format such as +420 123 456 789.');
   if (t('organizace').length > 200) e.organizace = L('Název organizace může mít nejvýše 200 znaků.', 'The organization name can be up to 200 characters.');
   return e;
 }
@@ -68,7 +69,8 @@ export function errorMessage(e) {
     invalid_popis: 'Zkontrolujte prosím popis poptávky (20 až 5 000 znaků).',
     invalid_jmeno: 'Zkontrolujte prosím své jméno.',
     invalid_email: 'Zkontrolujte prosím e-mailovou adresu.',
-    invalid_input: 'Zkontrolujte prosím telefon (např. +420 123 456 789) a název organizace.',
+    invalid_telefon: 'Zkontrolujte prosím telefon (např. +420 123 456 789).',
+    invalid_input: 'Zkontrolujte prosím vyplněné údaje.',
     forbidden: 'K této akci nemáte oprávnění.',
     timeout: 'Server neodpověděl včas. Zkuste to prosím znovu.',
     invalid_credentials: 'Nesprávný e-mail nebo heslo.',
@@ -94,7 +96,8 @@ export function errorMessage(e) {
     invalid_popis: 'Please check the description of your enquiry (20 to 5,000 characters).',
     invalid_jmeno: 'Please check your name.',
     invalid_email: 'Please check your email address.',
-    invalid_input: 'Please check the phone number (e.g. +420 123 456 789) and the organization name.',
+    invalid_telefon: 'Please check the phone number (e.g. +420 123 456 789).',
+    invalid_input: 'Please check the details you entered.',
     timeout: 'The server did not respond in time. Please try again.',
     network: 'Could not connect to the server. Please check your connection and try again.',
     catalog: 'The catalogue could not be loaded. Please check your connection and try again.',
@@ -280,10 +283,12 @@ function newDemoRequest(d, kdo) {
   const t = (k) => String(d[k] ?? '').trim();
   return {
     id: crypto.randomUUID(), cislo: `FSVB-${new Date().getFullYear()}-${String(n).padStart(4, '0')}`, vytvoreno: now, zmeneno: now,
-    popis: t('popis'), nabidka_id: null, nabidka_nazev: '', jmeno: t('jmeno'), // poptávka se na téma z přehledu neváže
+    popis: t('popis'), jmeno: t('jmeno'),
+    // poptávka k tématu z přehledu expertízy (jinak obecná): téma a jeho pracoviště, které dostane kopii
+    nabidka_id: d.nabidka?.id || null, nabidka_nazev: d.nabidka?.nazev || '', nabidka_pracoviste: d.nabidka?.pracoviste || '',
     email: t('email').toLowerCase(), telefon: t('telefon'), organizace: t('organizace'),
     typ_zadavatele: ['firma', 'verejna', 'soukroma'].includes(d.typ_zadavatele) ? d.typ_zadavatele : '',
-    nda: d.nda === true || d.nda === 'true', jazyk: d.jazyk === 'en' ? 'en' : 'cs',
+    nda: d.nda === true || d.nda === 'true', znalecky: d.znalecky === true || d.znalecky === 'true', jazyk: d.jazyk === 'en' ? 'en' : 'cs',
     klic: d.klic || null, zdroj: d.zdroj || 'formular', prilohy_slozka: crypto.randomUUID(), stav: d.stav || 'nova',
     pracoviste: null, poznamka: '', prvni_odpoved: null, predano_kdy: null, garant: '', role_fakulty: '', hodnota: null,
     typ_smlouvy: '', cislo_smlouvy: '', duvod: '', spokojenost: null, zpetna_vazba: '', spoluprace: false, kontakty_spoluprace: '',
@@ -310,8 +315,9 @@ const demo = {
     if (Date.now() / 1000 - iat < 3) throw new ApiError('too_fast');
     const err = validateRequest(data);
     if (Object.keys(err).length) throw new ApiError('invalid_' + Object.keys(err)[0], Object.values(err)[0]);
+    const nabidka = data.nabidka_id ? (await demoFull()).nabidky.find((n) => n.id === data.nabidka_id && n.zverejneno !== false) : null;
     const req = newDemoRequest({
-      ...data, zdroj: 'formular',
+      ...data, nabidka, zdroj: 'formular',
       stav: data.web ? 'spam' : 'nova', // vyplněné skryté pole → karanténa (stejně jako na serveru)
     }, 'formulář');
     list.push(req);
@@ -581,7 +587,7 @@ const OFFER_COLS = ['id', 'pracoviste', 'kategorie', 'nazev', 'popis', 'anotace'
 const REF_COLS = ['id', 'pracoviste', 'kategorie', 'nazev', 'kod', 'poskytovatel', 'resitel', 'typ', 'zamereni', 'obdobi', 'potreba',
   'dodali', 'prinos', 'klicovy_prinos', 'vice', 'odkaz', 'jazyk', 'druh', 'souhlas', 'foto', 'zverejneno', 'poradi', 'zdroj'];
 // sloupce poptávky, které smí správce měnit (shodně s oprávněními v schema.sql)
-const REQ_COLS = ['stav', 'pracoviste', 'poznamka', 'jmeno', 'email', 'telefon', 'organizace', 'popis', 'typ_zadavatele', 'nda',
+const REQ_COLS = ['stav', 'pracoviste', 'poznamka', 'jmeno', 'email', 'telefon', 'organizace', 'popis', 'typ_zadavatele', 'nda', 'znalecky',
   'prvni_odpoved', 'garant', 'role_fakulty', 'hodnota', 'typ_smlouvy', 'cislo_smlouvy', 'duvod',
   'spokojenost', 'zpetna_vazba', 'spoluprace', 'kontakty_spoluprace'];
 const pick = (o, cols) => Object.fromEntries(cols.filter((c) => o[c] !== undefined).map((c) => [c, o[c]]));

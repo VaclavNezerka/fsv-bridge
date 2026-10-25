@@ -98,10 +98,10 @@ Oprávnění ověřuje databáze. Kdo není v tabulce správců nebo nemá ově�
 
 ## 6. Upozornění na nové poptávky (doporučeno)
 
-Databáze může při každé nové poptávce a každý pracovní den ráno (souhrn nových a opožděných poptávek) poslat zprávu na webhook. Zpráva obsahuje jen čísla poptávek, žádné osobní údaje.
+Databáze může při každé nové poptávce a každý pracovní den ráno (souhrn nových a opožděných poptávek) poslat zprávu na webhook. Zpráva neobsahuje osobní údaje zadavatelů: jen číslo poptávky, u poptávky k tématu také téma, pracoviště a e-maily garantů tématu (pole `kopie`).
 
 1. V **Database → Extensions** zapněte **pg_net**.
-2. Na ČVUT je nejjednodušší **Power Automate** (Microsoft 365): nový tok **„Když se přijme požadavek HTTP“** → akce **Odeslat e-mail** nebo **Publikovat zprávu v Teams**, do textu vložte pole `text`. Adresu toku zkopírujte.
+2. Na ČVUT je nejjednodušší **Power Automate** (Microsoft 365): nový tok **„Když se přijme požadavek HTTP“** → akce **Odeslat e-mail** nebo **Publikovat zprávu v Teams**, do textu vložte pole `text`. U poptávky k tématu přidejte e-mail na adresy z pole `kopie` – tak pracoviště dostane kopii hned (garanty tématu, nemá-li je, garanty celého pracoviště). Adresu toku zkopírujte.
 3. V SQL Editoru adresu uložte:
 
    ```sql
@@ -109,7 +109,7 @@ Databáze může při každé nové poptávce a každý pracovní den ráno (sou
      on conflict (key) do update set value = excluded.value;
    ```
 
-Tělo zprávy má tvar `{"text": "Nová poptávka FSVB-2026-0001 …"}`. Denní souhrn se posílá v pracovní dny v 5:30 UTC (7:30 letního, 6:30 zimního času), jen pokud je co hlásit.
+Tělo zprávy má tvar `{"text": "Nová poptávka FSVB-2026-0001 …", "cislo": …, "tema": …, "pracoviste": "K133", "kopie": ["…@cvut.cz"], "znalecky": false}` (u obecné poptávky jsou `tema` a `pracoviste` prázdné a `kopie` je prázdný seznam). Denní souhrn se posílá v pracovní dny v 5:30 UTC (7:30 letního, 6:30 zimního času), jen pokud je co hlásit.
 
 ## 7. Katalog na webu
 

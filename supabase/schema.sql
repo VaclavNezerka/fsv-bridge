@@ -144,6 +144,8 @@ alter table public.poptavky add column if not exists nda boolean not null defaul
 alter table public.poptavky add column if not exists klic uuid;                                 -- ochrana proti dvojímu odeslání
 alter table public.poptavky add column if not exists zdroj text not null default 'formular';   -- formular / email / telefon / osobne / jine
 alter table public.poptavky add column if not exists jazyk text not null default 'cs';         -- jazyk webu při odeslání (cs / en)
+alter table public.poptavky add column if not exists znalecky boolean not null default false;  -- zadavatel žádá znalecký posudek
+alter table public.poptavky add column if not exists nabidka_pracoviste text not null default ''; -- pracoviště tématu (poptávka z detailu tématu)
 -- evidence zakázky (vyplňuje koordinátor)
 alter table public.poptavky add column if not exists prvni_odpoved timestamptz;                -- lhůta se měří k první odpovědi
 alter table public.poptavky add column if not exists predano_kdy timestamptz;
@@ -398,7 +400,8 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_url text;
+  v_url   text;
+  v_kopie jsonb := '[]'::jsonb;
 begin
   if new.stav = 'spam' then
     return new;
@@ -406,10 +409,26 @@ begin
   select s.value into v_url from private.settings s where s.key = 'notify_webhook';
   if coalesce(v_url, '') <> '' then
     begin
-      -- bez osobních údajů: jen číslo poptávky
+      -- poptávka k tématu: kopie garantům tématu (nemá-li téma kontakty, garantům celého pracoviště)
+      if new.nabidka_id is not null then
+        select coalesce(jsonb_agg(distinct k ->> 'email'), '[]'::jsonb) into v_kopie
+          from public.nabidky n cross join lateral jsonb_array_elements(n.kontakty) k
+          where n.id = new.nabidka_id and coalesce(k ->> 'email', '') <> '';
+        if jsonb_array_length(v_kopie) = 0 and new.nabidka_pracoviste <> '' then
+          select coalesce(jsonb_agg(distinct k ->> 'email'), '[]'::jsonb) into v_kopie
+            from public.nabidky n cross join lateral jsonb_array_elements(n.kontakty) k
+            where n.pracoviste = new.nabidka_pracoviste and coalesce(k ->> 'email', '') <> '';
+        end if;
+      end if;
+      -- bez osobních údajů zadavatele: číslo poptávky, téma, pracoviště a interní adresy pro kopii
       perform net.http_post(
         url     := v_url,
-        body    := jsonb_build_object('text', 'Nová poptávka ' || new.cislo || ' ve FSv Bridge – otevřete administraci.'),
+        body    := jsonb_build_object(
+          'text', 'Nová poptávka ' || new.cislo || ' ve FSv Bridge'
+            || case when new.nabidka_id is not null then ' k tématu „' || new.nabidka_nazev || '“ (' || new.nabidka_pracoviste || ')' else '' end
+            || case when new.znalecky then ' · znalecký posudek' else '' end || ' – otevřete administraci.',
+          'cislo', new.cislo, 'tema', nullif(new.nabidka_nazev, ''), 'pracoviste', nullif(new.nabidka_pracoviste, ''),
+          'kopie', v_kopie, 'znalecky', new.znalecky),
         headers := '{"Content-Type": "application/json"}'::jsonb
       );
     exception when others then
@@ -479,7 +498,7 @@ grant select, insert, update, delete on public.kategorie, public.pracoviste, pub
 -- poptávky vkládají jen funkce submit_request a admin_create_request; měnit lze jen tyto sloupce
 revoke insert, update on public.poptavky from authenticated;
 grant select, delete on public.poptavky to authenticated;
-grant update (stav, pracoviste, poznamka, jmeno, email, telefon, organizace, popis, typ_zadavatele, termin, nda,
+grant update (stav, pracoviste, poznamka, jmeno, email, telefon, organizace, popis, typ_zadavatele, termin, nda, znalecky,
   prvni_odpoved, garant, role_fakulty, hodnota, typ_smlouvy, cislo_smlouvy, duvod,
   spokojenost, zpetna_vazba, spoluprace, kontakty_spoluprace) on public.poptavky to authenticated;
 revoke all on public.poptavky_historie from authenticated;
@@ -588,10 +607,12 @@ declare
   v_typ     text := coalesce(p ->> 'typ_zadavatele', '');
   v_termin  text := coalesce(p ->> 'termin', '');
   v_nda     boolean := coalesce(p ->> 'nda', '') = 'true';
+  v_znal    boolean := coalesce(p ->> 'znalecky', '') = 'true';
   v_jazyk   text := case when p ->> 'jazyk' = 'en' then 'en' else 'cs' end;
   v_klic    text := lower(coalesce(p ->> 'klic', ''));
   v_spam    boolean := coalesce(p ->> 'web', '') <> '';
   v_nazev   text := '';
+  v_npr     text := '';
   v_headers jsonb;
   v_ip      text;
   v_ipkey   text;
@@ -671,7 +692,10 @@ begin
   if v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]{2,}$' or length(v_email) > 200 then
     raise exception using message = 'invalid_email', errcode = 'P0001';
   end if;
-  if (v_tel <> '' and v_tel !~ '^\+?[0-9 ()/-]{9,20}$') or length(v_org) > 200 then
+  if v_tel !~ '^\+?[0-9 ()/-]{9,20}$' then  -- telefon je povinný
+    raise exception using message = 'invalid_telefon', errcode = 'P0001';
+  end if;
+  if length(v_org) > 200 then
     raise exception using message = 'invalid_input', errcode = 'P0001';
   end if;
   if v_typ not in ('', 'firma', 'verejna', 'soukroma') then
@@ -680,20 +704,21 @@ begin
   if v_termin not in ('', 'mesic', 'ctvrtleti', 'pozdeji', 'nevim') then
     v_termin := '';
   end if;
-  if v_nab is not null then
-    select n.nazev into v_nazev from public.nabidky n where n.id = v_nab;
+  if v_nab is not null then  -- poptávka z detailu tématu: zapamatujeme téma i jeho pracoviště
+    select n.nazev, coalesce(n.pracoviste, '') into v_nazev, v_npr from public.nabidky n where n.id = v_nab and n.zverejneno;
     if not found then
       v_nab := null;
       v_nazev := '';
+      v_npr := '';
     end if;
   end if;
 
   -- 4) uložení (vyplněné skryté pole nebo překročený limit → karanténa, robot se to nedozví)
   v_cislo := private.nove_cislo();
-  insert into public.poptavky (cislo, popis, nabidka_id, nabidka_nazev, jmeno, email, telefon, organizace,
-                               typ_zadavatele, termin, nda, jazyk, klic, stav)
-    values (v_cislo, v_popis, v_nab, coalesce(v_nazev, ''), v_jmeno, v_email, v_tel, v_org,
-            v_typ, v_termin, v_nda, v_jazyk, nullif(v_klic, '')::uuid, case when v_spam or v_karant then 'spam' else 'nova' end)
+  insert into public.poptavky (cislo, popis, nabidka_id, nabidka_nazev, nabidka_pracoviste, jmeno, email, telefon, organizace,
+                               typ_zadavatele, termin, nda, znalecky, jazyk, klic, stav)
+    values (v_cislo, v_popis, v_nab, coalesce(v_nazev, ''), coalesce(v_npr, ''), v_jmeno, v_email, v_tel, v_org,
+            v_typ, v_termin, v_nda, v_znal, v_jazyk, nullif(v_klic, '')::uuid, case when v_spam or v_karant then 'spam' else 'nova' end)
     returning prilohy_slozka into v_slozka;
   return jsonb_build_object('cislo', v_cislo, 'slozka', v_slozka);
 end;
@@ -727,9 +752,10 @@ begin
     raise exception using message = 'invalid_input', errcode = 'P0001';
   end if;
   v_cislo := private.nove_cislo();
-  insert into public.poptavky (cislo, popis, jmeno, email, telefon, organizace, typ_zadavatele, zdroj)
+  insert into public.poptavky (cislo, popis, jmeno, email, telefon, organizace, typ_zadavatele, zdroj, znalecky)
     values (v_cislo, btrim(p ->> 'popis'), btrim(p ->> 'jmeno'), lower(btrim(coalesce(p ->> 'email', ''))),
-            btrim(coalesce(p ->> 'telefon', '')), btrim(coalesce(p ->> 'organizace', '')), v_typ, v_zdroj)
+            btrim(coalesce(p ->> 'telefon', '')), btrim(coalesce(p ->> 'organizace', '')), v_typ, v_zdroj,
+            coalesce(p ->> 'znalecky', '') = 'true')
     returning id, prilohy_slozka into v_id, v_slozka;
   return jsonb_build_object('id', v_id, 'cislo', v_cislo, 'slozka', v_slozka);
 end;

@@ -4,6 +4,7 @@
 
 Použití (z kořene projektu):  python tools/og_obrazek.py
 Vyžaduje numpy a Pillow; písmo Segoe UI (Windows), jinak DejaVu Sans. Kreslí se ve dvojnásobném rozlišení (vyhlazení).
+Logo fakulty je oficiální bílá verze (src/img/logo-fsv-negativ.svg) převedená do PNG: tools/og-logo-fsv.png.
 """
 from pathlib import Path
 
@@ -12,6 +13,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "src" / "img" / "og.png"
+LOGO = ROOT / "tools" / "og-logo-fsv.png"
 S = 2  # převzorkování
 W, H = 1200 * S, 630 * S
 BLUE, DARK, ACCENT, CYAN = (0, 101, 189), (0, 60, 116), (242, 169, 0), (110, 210, 255)
@@ -52,22 +54,15 @@ def main():
     img.paste((255, 255, 255), (0, 0), Image.eval(ImageChops.multiply(grid, spot), lambda v: int(v * 0.12)))
     d = ImageDraw.Draw(img)
 
-    # logo: bílá dlaždice se značkou (příhradový nosník a oranžový bod)
-    x0, y0, t = 72 * S, 66 * S, 72 * S
-    d.rounded_rectangle([x0, y0, x0 + t, y0 + t], radius=12 * S, fill=(255, 255, 255))
-    k = t / 64
-    p = lambda x, y: (x0 + x * k, y0 + y * k)
-    d.line([p(10, 44), p(54, 44)], fill=BLUE, width=int(4 * k))
-    d.line([p(14, 44), p(22, 26), p(30, 44), p(38, 26), p(46, 44), p(54, 26)], fill=BLUE, width=int(4 * k), joint="curve")
-    d.line([p(22, 26), p(54, 26)], fill=BLUE, width=int(4 * k))
-    cx, cy = p(34, 35)
-    d.ellipse([cx - 5 * k, cy - 5 * k, cx + 5 * k, cy + 5 * k], fill=ACCENT)
+    # oficiální logo fakulty (bílá verze, ochranná zóna je součástí obrázku)
+    logo = Image.open(LOGO).convert("RGBA")
+    lh = 112 * S
+    logo = logo.resize((round(logo.width * lh / logo.height), lh), Image.LANCZOS)
+    img.paste(logo, (62 * S, 40 * S), logo)  # čtverec loga zarovnaný s textem (x = 72)
 
-    d.text((168 * S, 80 * S), "FAKULTA STAVEBNÍ ČVUT V PRAZE", font=font(True, 24), fill=(220, 235, 250))
-    d.text((168 * S, 112 * S), "Spolupráce s praxí", font=font(False, 22), fill=(201, 221, 242))
     d.text((70 * S, 206 * S), "FSv Bridge", font=font(True, 88), fill=(255, 255, 255))
-    d.text((72 * S, 326 * S), "Odborníci Fakulty stavební", font=font(True, 40), fill=(255, 255, 255))
-    d.text((72 * S, 378 * S), "pro vaše projekty", font=font(True, 40), fill=(255, 255, 255))
+    d.text((72 * S, 326 * S), "Most mezi stavební praxí", font=font(True, 40), fill=(255, 255, 255))
+    d.text((72 * S, 378 * S), "a výzkumem", font=font(True, 40), fill=(255, 255, 255))
     d.rectangle([72 * S, 452 * S, 158 * S, 458 * S], fill=ACCENT)
     d.text((72 * S, 482 * S), "Zkoušky · měření · posudky · výzkum a vývoj", font=font(False, 30), fill=(227, 238, 249))
     d.text((72 * S, 532 * S), "Popište, co potřebujete – ozveme se vám.", font=font(False, 30), fill=(227, 238, 249))
