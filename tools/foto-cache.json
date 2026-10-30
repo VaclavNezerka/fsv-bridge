@@ -375,9 +375,9 @@
 "h": 885
 },
 "k134-diagnosticke-pruzkumy-mostu-a-nosnych-konstrukci-1": {
-"hash": "1cb3f0008310f4c670b7558dfe1571046fc0ea09",
-"w": 1280,
-"h": 720
+"hash": "ea39d2220a9459b689480a97e6ccd023ff84cec4",
+"w": 720,
+"h": 1280
 },
 "k134-diagnosticke-pruzkumy-mostu-a-nosnych-konstrukci-2": {
 "hash": "313daa563d7ac0cc31e82d3d8b68fa751c2c41bb",
@@ -395,9 +395,9 @@
 "h": 1400
 },
 "k134-dlouhodoby-monitoring-mostu-a-staveb-1": {
-"hash": "8cc01a89bc760522a521516059f613455f72726c",
+"hash": "249dddaae972b305108249959b95431047407221",
 "w": 541,
-"h": 465
+"h": 418
 },
 "k134-dlouhodoby-monitoring-mostu-a-staveb-2": {
 "hash": "a67c885b552fb7d930054a4e1a66416c61fbe594",
@@ -505,9 +505,9 @@
 "h": 576
 },
 "k134-staticke-a-dynamicke-zatezovaci-zkousky-mostu-1": {
-"hash": "caa13d3b2c5fa40623b550b20ca68874d79e35c5",
+"hash": "3c52b606bb26e4080d2748230287df7d042c97aa",
 "w": 1400,
-"h": 1040
+"h": 947
 },
 "k134-staticke-a-dynamicke-zatezovaci-zkousky-mostu-2": {
 "hash": "d72a6c09bc912dc1c46f6d85c7f4a7dc45eee34a",
@@ -545,9 +545,9 @@
 "h": 1400
 },
 "k134-zpracovani-odbornych-studii-a-posudku-v-oblasti-mostnih-3": {
-"hash": "d9028ae9ba2c50f7214ca12c490066f1d2fb6823",
+"hash": "c587ca3601ba573a8f6c3b0b718ba105fd4221b3",
 "w": 1234,
-"h": 689
+"h": 579
 },
 "k134-zpracovani-odbornych-studii-a-posudku-v-oblasti-mostnih-4": {
 "hash": "ef38c34eae8b8170ca0c6f6efd10174383d66b71",
@@ -1344,6 +1344,31 @@
 "w": 1400,
 "h": 547
 },
+"ref-k134-dlouhodobe-sledovani-stavu-historickeho-zeleznicnih-1": {
+"hash": "be5f6bbd232f99406a821fa7e94bc3a92c93ede9",
+"w": 1400,
+"h": 1050
+},
+"ref-k134-dlouhodobe-sledovani-stavu-historickeho-zeleznicnih-2": {
+"hash": "bcf81cbefe3b9809c60cd7f8c8b1d5f9611c9d5a",
+"w": 1400,
+"h": 1050
+},
+"ref-k134-expertiza-monitoring-a-zatezovaci-zkousky-zeleznicn-1": {
+"hash": "e999e75d4eab00190087a67d83933233913831ce",
+"w": 1400,
+"h": 1050
+},
+"ref-k134-expertiza-monitoring-a-zatezovaci-zkousky-zeleznicn-2": {
+"hash": "c3d8e0d06df0139ef29a66314ef2a67f0c77dfa2",
+"w": 1400,
+"h": 1050
+},
+"ref-k134-expertiza-monitoring-a-zatezovaci-zkousky-zeleznicn-3": {
+"hash": "70d1420e397d7c3aac8508bd79c4123d89361930",
+"w": 1400,
+"h": 882
+},
 "ref-k134-fishwall-chovani-hybridnich-pozarnich-sten-za-pozar-1": {
 "hash": "15780265f09619558743e73948cb95d51f896a9d",
 "w": 647,
@@ -1389,6 +1414,16 @@
 "w": 1400,
 "h": 693
 },
+"ref-k134-pokrocile-metody-posuzovani-ocelovych-zeleznicnich-1": {
+"hash": "e7de3a5ebccc2c7f881f27d1e0a6098b7151b4cd",
+"w": 1127,
+"h": 678
+},
+"ref-k134-pokrocile-metody-posuzovani-ocelovych-zeleznicnich-2": {
+"hash": "e0601148a28cc67094aa3e3a9aa2fc3990fba5ff",
+"w": 803,
+"h": 501
+},
 "ref-k134-taperframe-navrhovani-ocelovych-ramu-z-prvku-s-prom-1": {
 "hash": "cdb2f6407329aaf687d2364a7e07912c8f16c19b",
 "w": 1127,
@@ -1403,6 +1438,21 @@
 "hash": "99e625717ad268d43d5c5129131d0a81b4752bbf",
 "w": 888,
 "h": 528
+},
+"ref-k134-zesileni-historickeho-oceloveho-mostu-slitinami-s-t-1": {
+"hash": "590306f370c883e781f240e2912dc546513b5dc7",
+"w": 1180,
+"h": 688
+},
+"ref-k134-zesileni-historickeho-oceloveho-mostu-slitinami-s-t-2": {
+"hash": "376befedbc803efd59d19dd4cba4d23d06257355",
+"w": 1386,
+"h": 661
+},
+"ref-k134-zesileni-historickeho-oceloveho-mostu-slitinami-s-t-3": {
+"hash": "ca20df443a1212ce63c2e82c90c7f049343d12c4",
+"w": 605,
+"h": 391
 },
 "ref-k135-pamet-vepsana-do-kamene-1": {
 "hash": "c86288dc340cfa5c125580e4a9cb615d11de7efc",

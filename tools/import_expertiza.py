@@ -723,6 +723,63 @@ NAHRAZENO = {
     "Nabidka/K134/K134-1/134-1-Nabídka vzor.docx": "nahrazeno aktualizovanou verzí z doplnění K134 (30. 10. 2026): K134-mosty/07-szz",
     "Reference/K134/K134-1/134-1-Reference vzor-verze 2.docx": "nahrazeno verzí z doplnění K134 (30. 10. 2026): K134-mosty/01-SMA",
 }
+# Úpravy fotek z podkladů (konec cesty souboru → otočení o 90° proti směru hodin, oříznutí spodní části v podílu výšky).
+FOTO_UPRAVY = {
+    "02-dia/20250905_171630.jpg": {"otocit": -90},      # fotka je v podkladech otočená
+    "07-szz/03.jpg": {"orez_dole": 0.09},               # vodoznak telefonu
+    "06-posudek/Obr 01.jpg": {"orez_dole": 0.16},       # vpisované datum
+    "04-monit/Obr 01c.jpg": {"orez_dole": 0.1},         # vpisované datum
+    "07-Oskar/PC031217.JPG": {"orez_dole": 0.16},       # vpisované datum
+}
+# Zakázkové reference, které se přesto zveřejní (rozhodnutí koordinátora 30. 10. 2026: „to nejlepší, bez detailů“).
+# Obecný text bez objednatele, čísla zakázky, odkazů a lokalizačních podrobností; fotky vybrané ručně.
+ZAKAZKY_ZVEREJNIT = {
+    "Reference/K134/K134-mosty/01-SMA/134-1-Reference SMA.docx": {
+        "nazev": "Zesílení historického ocelového mostu slitinami s tvarovou pamětí (SMA)",
+        "potreba": "Vyvinout a ověřit zcela novou technologii zesilování mostů pomocí slitin s tvarovou pamětí (SMA – shape memory alloys).",
+        "dodali": ["Atypická zatěžovací zkouška 115 let starého nýtovaného ocelového mostu se zatížením 475 t",
+                   "Zesílení konstrukce metodou SMA pro zvýšení únosnosti a únavové odolnosti a dlouhodobý monitoring",
+                   "Série dynamických zkoušek (modální analýza) na nepoškozeném mostě a po řízeném poškození pro ověření detekce poruch"],
+        "prinos": "Mezinárodní spolupráce se švýcarským výzkumným ústavem EMPA a nové poznatky o využití materiálů SMA.",
+        "klicovy_prinos": "První aplikace zesílení pomocí SMA na mostní konstrukci na světě.",
+        "foto": [("Obr 14.png", "Zatěžovací zkouška se zatížením 475 t"), ("Obrázek1.jpg", "Instalace zesílení SMA"),
+                 ("deformace do poruseni.jpg", "Deformace konstrukce – numerický model")],
+    },
+    "Reference/K134/K134-mosty/02-Vyton/134-2-Reference Vyton.docx": {
+        "nazev": "Dlouhodobé sledování stavu historického železničního mostu (SHM)",
+        "potreba": "Zajistit bezpečný provoz historického železničního mostu pomocí systému dlouhodobého sledování stavu (structural health monitoring).",
+        "dodali": ["Návrh systému monitoringu s tenzometrickými snímači, snímači zrychlení, dráhy a teploty a se sledováním akustické emise",
+                   "Statická zatěžovací zkouška", "Nastavení varovných hodnot sledovaných veličin"],
+        "prinos": "Vývoj systému sledování na unikátním historickém mostě.",
+        "klicovy_prinos": "První takto rozsáhlá aplikace systému sledování stavu na mostě v ČR.",
+        "foto": [("P5020614.JPG", "Sledovaný historický most"), ("Obrázek5.png", "Měřicí ústředna monitoringu")],
+    },
+    "Reference/K134/K134-mosty/03-SZDC W/134-3-Reference SZ W.docx": {
+        "nazev": "Pokročilé metody posuzování ocelových železničních mostů na účinky větru",
+        "potreba": "Zpřesnit zatížení železničních mostů větrem pro přepočty jejich zatížitelnosti.",
+        "dodali": ["Metodika přesnějšího stanovení zatížení větrem a jeho kombinace se zatížením dopravou pro charakteristické typy ocelových mostů",
+                   "Opravné součinitele zatížení větrem a kombinační součinitele pro současné působení větru a dopravy",
+                   "Výsledky převzaté do předpisu správce železniční infrastruktury a používané v praxi"],
+        "prinos": "Mezinárodní ohlas a zachování řady historických mostů v provozu.",
+        "klicovy_prinos": "Světově unikátní metodika, která zpřesňuje zatížení železničních mostů větrem a pomáhá zachovat památkově cenné mosty.",
+        "vice": "Ve spolupráci s Ústavem teoretické a aplikované mechaniky AV ČR.",
+        "foto": [("obr1.tif", "Model mostu v aerodynamickém tunelu"), ("Obrázek1.png", "Model mostní konstrukce")],
+    },
+    "Reference/K134/K134-mosty/07-Oskar/134-7-Reference Oskar.docx": {
+        "nazev": "Expertíza, monitoring a zatěžovací zkoušky železničního mostu se síťovým obloukem",
+        "potreba": "Ověřit návrh unikátního mostu se svařovanými táhly a najít metodu průběžného měření sil v táhlech, aby se při výstavbě "
+                   "přímo dosáhlo cílového stavu sil; poté most ověřit zatěžovacími zkouškami a sledovat.",
+        "dodali": ["Expertní posouzení návrhu mostu a asistence při návrhu, dynamický výpočet",
+                   "Měření sil v táhlech během výstavby systémem na bázi tenzometrických snímačů",
+                   "Statické a dynamické zatěžovací zkoušky", "Dlouhodobý monitoring mostu a bezstykové koleje"],
+        "prinos": "Bezpečná realizace složitého systému táhel unikátní konstrukce síťového oblouku.",
+        "klicovy_prinos": "Realizace unikátní konstrukce mostu na železniční síti.",
+        "foto": [("P1010022.JPG", "Most se síťovým obloukem"), ("P1010023.JPG", "Celkový pohled na most"), ("PC031217.JPG", "Pohled na most")],
+    },
+}
+_ZAKAZKA_OBECNE = {"poskytovatel": "", "kod": "", "odkaz": "", "obdobi": "", "typ": "Smluvní výzkum",
+                   "zamereni": "Mosty a inženýrské konstrukce", "resitel": "prof. Ing. Pavel Ryjáček, Ph.D.", "vice": "Ve spolupráci Katedry ocelových a dřevěných konstrukcí, Katedry mechaniky a Experimentálního centra FSv ČVUT.",
+                   "jazyk": "cs", "kategorie": "mosty"}
 # Obor podle obsahu služby tam, kde se liší od oboru pracoviště.
 KAT_PODLE_OBSAHU = {
     "k122-vyvoj-cementovych-a-bezcementovych": "materialy", "k122-vyuziti-deponovanych-popelovin": "materialy",
@@ -1064,7 +1121,8 @@ def process_image(src, base):
     full_p, th_p = OUT_IMG / f"{base}.webp", OUT_IMG / f"{base}-t.webp"
     out = {"src": f"img/exp/{base}.webp", "thumb": f"img/exp/{base}-t.webp"}
     try:
-        digest = hashlib.sha1(src.read_bytes()).hexdigest()
+        uprava = next((u for k, u in FOTO_UPRAVY.items() if src.as_posix().endswith(k)), None)
+        digest = hashlib.sha1(src.read_bytes() + (repr(sorted(uprava.items())).encode() if uprava else b"")).hexdigest()
         hit = CACHE.get(base)
         if hit is None and BOOTSTRAP and full_p.exists() and th_p.exists():
             with Image.open(src) as im:  # jen hlavička: platí pro fotku stejná pravidla jako při převodu?
@@ -1081,6 +1139,10 @@ def process_image(src, base):
             return {**out, "w": hit["w"], "h": hit["h"]}
         with Image.open(src) as im:
             im = ImageOps.exif_transpose(im)
+            if uprava and uprava.get("otocit"):
+                im = im.rotate(uprava["otocit"], expand=True)
+            if uprava and uprava.get("orez_dole"):
+                im = im.crop((0, 0, im.width, round(im.height * (1 - uprava["orez_dole"]))))
             if im.mode not in ("RGB", "L"):
                 rgba = im.convert("RGBA")
                 bg = Image.new("RGB", rgba.size, (255, 255, 255))
@@ -1250,27 +1312,36 @@ def main():
                     r.update({k: v for k, v in cz.items() if k != "foto"})
                     r["jazyk"] = "cs"
                     warnings.append(f"- reference dodaná anglicky je přeložena do češtiny (ať ji pracoviště zkontroluje): **{cz['nazev']}** – `{vrel}`")
+                ov = ZAKAZKY_ZVEREJNIT.get(vrel)
+                if ov:
+                    druh_puvodni = druh_reference(r)
+                    r.update({**_ZAKAZKA_OBECNE, **{k: v for k, v in ov.items() if k != "foto"}})
                 raw = r["nazev"]
                 r["nazev"] = nice_title(raw)
-                if r["nazev"] != clean(raw).strip(" ."):
+                if r["nazev"] != clean(raw).strip(" .") and not ov:
                     renamed.append(f"- „{clean(raw)}“ → „{r['nazev']}“")
                 rid = slugify(f"ref-{dept}-{r['nazev']}", 60)
                 while rid in used_ids:
                     rid += "-2"
                 used_ids.add(rid)
-                druh = druh_reference(r)  # dřív, než z kódu zmizí interní čísla zakázek
-                if druh == "zakazka" and not ZAKAZKOVE_REFERENCE:
+                druh = druh_puvodni if ov else druh_reference(r)  # dřív, než z kódu zmizí interní čísla zakázek
+                if druh == "zakazka" and not ZAKAZKOVE_REFERENCE and not ov:
                     vynechano.append(f"- {r['nazev']} ({dept}) – `{vrel}`")
                     zf.close(); continue
                 caps = r.pop("foto_popisky")
                 hidden = skryt(rid)
                 pics = images_for(vrel, by_dir[(kind, vdir)] if (kind, vdir) in by_dir else [name], doc_dirs, images, caps)
+                if ov:  # ručně vybrané fotky s popisky
+                    pics = [x for f, _ in ov["foto"] for x in pics if x.name == f]
+                    caps = [c for _, c in ov["foto"]]
                 if not pics:
                     pics = embedded_images(zf, media, tmp, rid)
                 foto = [] if hidden else make_photos(pics, rid, MAX_PHOTOS_REF, caps, warnings)
                 for f, popis in zip(foto, (cz or {}).get("foto", [])):  # popisky až po výběru fotek
                     f["popis"] = popis
                 r["kod"] = verejny_kod(r["kod"])
+                if ov:
+                    report.append(f"- zakázková reference zveřejněna v obecné podobě (30. 10. 2026): **{r['nazev']}** – `{vrel}`")
                 reference.append({"id": rid, "pracoviste": dept, "kategorie": kat, **r, "druh": druh, "foto": foto,
                                   "zverejneno": not hidden, "poradi": len(reference) + 1, "zdroj": vrel})
                 if hidden:
