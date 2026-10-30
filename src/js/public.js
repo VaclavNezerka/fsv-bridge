@@ -5,7 +5,6 @@ import { api, validateRequest, safeFileName, errorMessage, ALLOWED_EXT } from '.
 import * as pow from './pow.js';
 import { $, $$, esc, nl2br, norm, truncate, icon, toast, go, ss, ls, openDialog, onDialogClose, debounce, fileSize, safeUrl } from './util.js';
 import { L, PL, lang } from './i18n.js';
-import { fxToggle } from './fx.js';
 
 export const state = { catalog: null, index: null };
 
@@ -218,7 +217,7 @@ export function viewHome() {
           <button class="btn btn-light" type="submit">${icon('search', 20)}<span>${L('Hledat', 'Search')}</span></button>
         </form>
         <p class="quick">${QUICK().map((q) => `<a href="#/nabidka?q=${encodeURIComponent(q)}">${esc(q)}</a>`).join('')}</p>
-      </div><div class="hero-art">${heroSvg()}${fxToggle('fx-toggle-icon')}</div></div></section>
+      </div><div class="hero-art">${heroSvg()}</div></div></section>
 
       <section class="stats" aria-label="${L('FSv Bridge v číslech', 'FSv Bridge in numbers')}"><div class="wrap stats-grid">
         <div><strong data-count="${c.nabidky.length}">${c.nabidky.length}</strong><span>${L('témat expertízy', 'expertise topics')}</span></div>
@@ -238,7 +237,7 @@ export function viewHome() {
       </section>
 
       <section class="tech" aria-labelledby="h-tech"><div class="wrap section">
-        <div class="section-head"><h2 id="h-tech">${L('Moderní metody a laboratoře', 'Modern methods and laboratories')}</h2>${fxToggle()}</div>
+        <div class="section-head"><h2 id="h-tech">${L('Moderní metody a laboratoře', 'Modern methods and laboratories')}</h2></div>
         <div class="grid tech-grid reveal-kids">${TECH().map(techCard).join('')}</div>
       </div></section>
 
@@ -875,13 +874,13 @@ const DOCS = {
       <p>Czech Technical University in Prague is committed to making this web application accessible in accordance with Act No. 99/2019 Coll., on the accessibility of websites and mobile applications.</p>
       <h2>Compliance status</h2><p>The application is <strong>partially compliant</strong> with standard ČSN EN 301 549 (WCAG 2.1, level AA). The test version has not yet undergone an independent audit.</p>
       <h2>Non-accessible content</h2><ul><li>Some photographs in the overview of expertise and the projects have only the name of the topic or project as alternative text, not a description of the image.</li><li>Files attached to enquiries by clients are not subject to accessibility checks.</li></ul>
-      <h2>Measures applied</h2><ul><li>semantic structure, a “Skip to content” link and keyboard operation;</li><li>field labels and clear error messages with an error summary;</li><li>text and control contrast in line with WCAG 2.1 AA, a clearly visible focus indicator and respect for reduced-motion settings;</li><li>animations and videos on the home page can be paused with a button and do not start at all if reduced motion is set; the videos have no sound;</li><li>spam protection without image tests (CAPTCHA), which many people find impossible to pass.</li></ul>
+      <h2>Measures applied</h2><ul><li>semantic structure, a “Skip to content” link and keyboard operation;</li><li>field labels and clear error messages with an error summary;</li><li>text and control contrast in line with WCAG 2.1 AA, a clearly visible focus indicator and respect for reduced-motion settings;</li><li>animations and videos on the home page do not start at all if reduced motion is set; the videos have no sound;</li><li>spam protection without image tests (CAPTCHA), which many people find impossible to pass.</li></ul>
       <h2>Preparation of this statement</h2><p>Prepared on ${esc(CONFIG.statementDate)} on the basis of a self-assessment.</p>
       <h2>Feedback</h2><p>Have you encountered a barrier? Please write to ${coordLink()}. If you are not satisfied with the response, you may contact the Ministry of the Interior of the Czech Republic as the supervisory authority.</p>` : `
       <p>ČVUT v Praze se zavazuje zpřístupnit tuto webovou aplikaci v souladu se zákonem č. 99/2019 Sb., o přístupnosti internetových stránek a mobilních aplikací.</p>
       <h2>Stav souladu</h2><p>Aplikace je <strong>částečně v souladu</strong> s normou ČSN EN 301 549 (WCAG 2.1, úroveň AA). Testovací verze dosud neprošla nezávislým auditem.</p>
       <h2>Nepřístupný obsah</h2><ul><li>Část fotografií v přehledu expertízy a u projektů má jako alternativní text jen název tématu nebo projektu, nikoli popis obsahu snímku.</li><li>Soubory, které zadavatelé přikládají k poptávkám, nejsou předmětem kontroly přístupnosti.</li></ul>
-      <h2>Uplatněná řešení</h2><ul><li>sémantická struktura, odkaz „Přeskočit na obsah“ a ovládání klávesnicí,</li><li>popisky polí a srozumitelné chybové hlášky se souhrnem chyb,</li><li>kontrast textu a ovládacích prvků podle WCAG 2.1 AA, viditelné zvýraznění prvku s fokusem a respektování omezení animací,</li><li>animace a videa na úvodní stránce lze zastavit tlačítkem a při nastavení omezených animací se vůbec nespustí; videa jsou bez zvuku,</li><li>ochrana proti spamu bez obrázkových testů (CAPTCHA), které bývají pro řadu lidí nepřekonatelné.</li></ul>
+      <h2>Uplatněná řešení</h2><ul><li>sémantická struktura, odkaz „Přeskočit na obsah“ a ovládání klávesnicí,</li><li>popisky polí a srozumitelné chybové hlášky se souhrnem chyb,</li><li>kontrast textu a ovládacích prvků podle WCAG 2.1 AA, viditelné zvýraznění prvku s fokusem a respektování omezení animací,</li><li>animace a videa na úvodní stránce se při nastavení omezených animací vůbec nespustí; videa jsou bez zvuku,</li><li>ochrana proti spamu bez obrázkových testů (CAPTCHA), které bývají pro řadu lidí nepřekonatelné.</li></ul>
       <h2>Vypracování prohlášení</h2><p>Vypracováno dne ${esc(CONFIG.statementDate)} na základě vlastního posouzení.</p>
       <h2>Zpětná vazba</h2><p>Narazili jste na překážku? Napište na ${coordLink()}. Pokud nebudete s odpovědí spokojeni, můžete se obrátit na Ministerstvo vnitra ČR jako orgán dohledu.</p>`}`,
   },

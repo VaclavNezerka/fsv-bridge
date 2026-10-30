@@ -16,7 +16,7 @@ src/                         web: HTML, CSS a JavaScript bez knihoven a bez sest
   css/app.css                vzhled v barvách ČVUT
   js/config.js               nastavení: databáze, koordinátor, lhůta odpovědi, pověřenec
   js/app.js                  směrování a rozvržení
-  js/fx.js                   animace úvodu: odkrývání sekcí, naběhnutí čísel, videa jen ve viditelné části, tlačítko pro zastavení
+  js/fx.js                   animace úvodu: odkrývání sekcí, naběhnutí čísel, videa jen ve viditelné části
   js/i18n.js                 jazyk webu (čeština / angličtina), přepínač s vlajkou, slovník pevných textů
   js/public.js               přehled expertízy, projekty, formulář poptávky, právní informace (česky i anglicky)
   js/admin.js                administrace: poptávky, expertíza, reference, pracoviště, účet

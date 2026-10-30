@@ -549,13 +549,6 @@ table.data a:hover, table.data .linklike:hover { text-decoration: underline; }
 .tcard-body p { margin: 0; color: #B8CCE0; font-size: .94rem; }
 @keyframes fx-blink { 50% { opacity: .25; } }
 
-/* Tlačítko pro zastavení animací (WCAG 2.2.2); na úvodní ilustraci jen ikona */
-.fx-toggle { display: inline-flex; align-items: center; gap: 7px; flex: none; padding: 8px 13px; border-radius: 99px; cursor: pointer;
-  font: inherit; font-size: .86rem; font-weight: 650; line-height: 1; color: #D6E8F7; background: rgba(255, 255, 255, .07); border: 1px solid rgba(143, 220, 255, .35); }
-.fx-toggle:hover { color: #fff; background: rgba(255, 255, 255, .15); }
-.fx-toggle-icon { position: absolute; top: 0; right: 0; width: 34px; height: 34px; padding: 0; justify-content: center; }
-.fx-toggle-icon .fx-toggle-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
-
 /* Úvodní ilustrace mostu (heroSvg): konstrukce se vykreslí, pak běží smyčky – signál po pásech, skener a kroky poptávky */
 .hx-members > * { animation: hx-draw .6s cubic-bezier(.3, .6, .3, 1) backwards; }
 .hx-members > :nth-child(2) { animation-delay: .1s; } .hx-members > :nth-child(3) { animation-delay: .25s; }
@@ -598,8 +591,6 @@ table.data a:hover, table.data .linklike:hover { text-decoration: underline; }
 @keyframes hx-s1 { 0%, 28% { opacity: 1; } 31%, 97% { opacity: 0; } 100% { opacity: 1; } } /* předchozí krok zmizí, než se objeví další */
 @keyframes hx-s2 { 0%, 31% { opacity: 0; } 34%, 61% { opacity: 1; } 64%, 100% { opacity: 0; } }
 @keyframes hx-s3 { 0%, 64% { opacity: 0; } 67%, 94% { opacity: 1; } 97%, 100% { opacity: 0; } }
-/* zastavené animace: smyčky zmizí a ilustrace zůstane v klidovém stavu */
-.fx-paused .hx-pulse, .fx-paused .hx-scan, .fx-paused .hx-ring, .fx-paused .hx-glow, .fx-paused .hx-s, .fx-paused .tcard-chip::before { animation: none; }
 
 /* Postupné odkrývání sekcí úvodu při posouvání (fx.js přidá .is-in; bez JS a při omezených animacích je vše hned vidět) */
 .fx-ready .reveal:not(.is-in), .fx-ready .reveal-kids:not(.is-in) > * { opacity: 0; }
@@ -620,7 +611,6 @@ table.data a:hover, table.data .linklike:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
   .ocard:hover, .rcard:hover, .kat:hover, .tcard:hover { transform: none; }
-  .fx-toggle { display: none; } /* nic se nepohybuje, není co zastavit */
 }
 /* úvod: hlavní výzva a časté dotazy */
 .hero-cta { margin: 22px 0 0; }
@@ -671,7 +661,7 @@ details.evidence summary { cursor: pointer; font-weight: 650; color: var(--blue-
 .field-check { display: flex; align-items: flex-end; padding-bottom: 6px; }
 
 @media print {
-  .site-header, .site-footer, .test-banner, .actions, .fx-toggle { display: none !important; }
+  .site-header, .site-footer, .test-banner, .actions { display: none !important; }
   .reveal, .reveal-kids > * { opacity: 1 !important; animation: none !important; }
   body { background: #fff; font-size: 11pt; }
   .card { box-shadow: none; border: 0; padding: 0; }

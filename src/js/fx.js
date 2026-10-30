@@ -1,21 +1,18 @@
 // Pohyb na webu: sekce úvodu se při posouvání plynule odkryjí, čísla „naběhnou“ a technická videa hrají,
 // jen když jsou vidět (načtou se až tehdy). Kdo má v systému omezené animace nebo úsporu dat, uvidí
-// statické obrázky. Smyčky delší než 5 s jde zastavit tlačítkem (WCAG 2.2.2) – volba se pamatuje.
-import { $$, ls, icon } from './util.js';
-import { L } from './i18n.js';
+// statické obrázky.
+import { $$, ls } from './util.js';
 
-const KEY = 'ph-fx-paused';
 const html = document.documentElement;
 const motion = 'IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 const saveData = navigator.connection?.saveData === true;
-let paused = ls.get(KEY) === '1';
-html.classList.toggle('fx-paused', paused);
+ls.del('ph-fx-paused'); // volba dřívějšího tlačítka „Pozastavit animace“ už neplatí
 if (motion) html.classList.add('fx-ready'); // bez této třídy zůstává vše hned viditelné (CSS)
 
 const visible = new Set(); // videa, která jsou právě alespoň ze čtvrtiny vidět
 
 function play(v) {
-  if (paused || !visible.has(v)) return;
+  if (!visible.has(v)) return;
   if (!v.dataset.loaded) { // video se stahuje až při prvním zobrazení
     v.dataset.loaded = '1';
     $$('source[data-src]', v).forEach((s) => { s.src = s.dataset.src; });
@@ -50,24 +47,6 @@ const onceObs = motion && new IntersectionObserver((entries, obs) => {
   }
 }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
 
-/** Tlačítko pro zastavení / spuštění animací (stav platí pro celý web). */
-export function fxToggle(cls = '') {
-  return `<button type="button" class="fx-toggle ${cls}" data-fx-toggle title="${label()}">${toggleInner()}</button>`;
-}
-const label = () => (paused ? L('Spustit animace', 'Play animations') : L('Pozastavit animace', 'Pause animations'));
-const toggleInner = () => `${icon(paused ? 'play' : 'pause', 16)}<span class="fx-toggle-label">${label()}</span>`;
-
-function setPaused(p) {
-  paused = p;
-  if (p) ls.set(KEY, '1'); else ls.del(KEY);
-  html.classList.toggle('fx-paused', p);
-  $$('[data-fx-toggle]').forEach((b) => { b.innerHTML = toggleInner(); b.title = label(); });
-  $$('video.fx-video').forEach((v) => (p ? v.pause() : play(v)));
-}
-
-document.addEventListener('click', (e) => {
-  if (e.target.closest('[data-fx-toggle]')) setPaused(!paused);
-});
 // tisk před posunutím stránky: čísla rovnou v konečné podobě (skryté sekce odkryje tiskový styl)
 window.addEventListener('beforeprint', () => {
   $$('[data-count]').forEach((el) => { el.textContent = el.dataset.count; });
