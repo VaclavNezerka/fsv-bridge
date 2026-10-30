@@ -76,7 +76,7 @@ function failBox(e) {
 }
 
 function shell(active, inner, { limited = false } = {}) {
-  const all = [['poptavky', 'Poptávky a zakázky', 'inbox'], ['nabidky', 'Expertíza', 'list'], ['reference', 'Reference', 'folder'], ['pracoviste', 'Pracoviště', 'building'], ['ucet', 'Účet', 'user']];
+  const all = [['poptavky', 'Poptávky a zakázky', 'inbox'], ['nabidky', 'Expertíza', 'list'], ['reference', 'Reference', 'folder'], ['pracoviste', 'Obory a pracoviště', 'building'], ['ucet', 'Účet', 'user']];
   const tabs = limited ? all.filter(([id]) => id === 'ucet') : all; // bez 2FA jen nastavení účtu
   const label = all.find(([id]) => id === active)?.[1] || '';
   return `<div class="wrap page admin">
@@ -768,6 +768,8 @@ function editor(kind, id) {
             ${text('nazev', 'Název', item.nazev, { req: true })}
             <div class="grid-2">${select('pracoviste', 'Pracoviště', item.pracoviste, depts, 'Vyberte pracoviště')}${select('kategorie', 'Obor', item.kategorie, kats, 'Vyberte obor')}</div>
             ${isOffer ? `
+              <fieldset class="field group dept-extra"><legend>Další pracoviště <span class="opt">(spolupracují na tématu)</span></legend>
+                <div class="check-grid">${depts.map(([v, l]) => `<label class="check-inline"><input type="checkbox" name="pracoviste_dalsi" value="${esc(v)}"${(item.pracoviste_dalsi || []).includes(v) ? ' checked' : ''}> ${esc(l)}</label>`).join('')}</div></fieldset>
               ${text('popis', 'Úvodní popis', item.popis, { rows: 3 })}
               ${text('anotace', 'Zaměření', (item.anotace || []).join('\n'), { rows: 8, hint: 'Každou položku napište na samostatný řádek.' })}
               ${text('vysledky', 'Doložené výsledky', (item.vysledky || []).join('\n'), { rows: 3, hint: 'Jedna položka na řádek.' })}
@@ -869,6 +871,7 @@ function editor(kind, id) {
         }
         if (isOffer) {
           Object.assign(out, {
+            pracoviste_dalsi: $$('input[name="pracoviste_dalsi"]:checked', form).map((x) => x.value).filter((k) => k !== out.pracoviste),
             popis: el.popis.value.trim(), anotace: lines(el.anotace.value), vysledky: lines(el.vysledky.value),
             klicova_slova: el.klicova_slova.value.split(',').map((s) => s.trim()).filter(Boolean),
             laborator: el.laborator.value.trim(), horizon: el.horizon.value.trim(), vystupy: el.vystupy.value.trim(),
@@ -904,10 +907,15 @@ function editor(kind, id) {
 export const viewOfferEdit = (id) => editor('nabidky', id);
 export const viewRefEdit = (id) => editor('reference', id);
 
-// ------------------------------------------------------------------ pracoviště
+// ------------------------------------------------------------------ obory a pracoviště
+// ikony, ze kterých lze oboru vybrat (util.js)
+const KAT_IKONY = [['beam', 'nosník'], ['bridge', 'most'], ['diag', 'diagnostika'], ['flask', 'laboratoř'], ['building', 'budova'],
+  ['crane', 'jeřáb'], ['layers', 'vrstvy'], ['road', 'silnice'], ['drop', 'voda'], ['target', 'terč'], ['columns', 'sloupy'],
+  ['chip', 'čip'], ['cap', 'vzdělávání'], ['star', 'hvězda']];
+
 export function viewDepts() {
   return {
-    title: 'Pracoviště',
+    title: 'Obory a pracoviště',
     html: shell('pracoviste', `<div id="dp">${loading()}</div>`),
     async mount(root) {
       const box = $('#dp', root);
@@ -920,11 +928,52 @@ export function viewDepts() {
         <div class="field"><label for="d-c-${esc(d.kod)}">Oblast</label><select id="d-c-${esc(d.kod)}" name="kategorie">${kats.map((k) => `<option value="${esc(k.id)}"${k.id === d.kategorie ? ' selected' : ''}>${esc(k.nazev)}</option>`).join('')}</select></div>
         <div class="field small-field"><label for="d-p-${esc(d.kod)}">Pořadí</label><input id="d-p-${esc(d.kod)}" name="poradi" type="number" value="${esc(d.poradi ?? 0)}"></div>
         <button type="submit" class="btn btn-secondary btn-sm">${isNew ? 'Přidat' : 'Uložit'}</button></form>`;
-      box.innerHTML = `<div class="dept-list">${data.pracoviste.map((d) => row(d)).join('')}</div>
-        <h2 class="h3">Přidat pracoviště</h2>${row({ kod: '', nazev: '', kategorie: kats[0]?.id, poradi: data.pracoviste.length + 1 }, true)}`;
+      // obor: kód je součástí adres (?k=…) a barev na webu – u existujícího oboru se nemění
+      const used = (id) => data.nabidky.filter((n) => n.kategorie === id).length + data.reference.filter((r) => r.kategorie === id).length
+        + data.pracoviste.filter((d) => d.kategorie === id).length;
+      const katRow = (k, isNew = false) => `<form class="dept-row" data-form="kat"${isNew ? ' data-new="1"' : ''}>
+        <span class="kat-preview">${icon(k.ikona || 'star', 22)}</span>
+        <div class="field"><label for="k-i-${esc(k.id)}">Kód</label><input id="k-i-${esc(k.id)}" name="id" value="${esc(k.id)}"${isNew ? ' placeholder="např. mosty"' : ' readonly'}></div>
+        <div class="field grow"><label for="k-n-${esc(k.id)}">Název</label><input id="k-n-${esc(k.id)}" name="nazev" value="${esc(k.nazev)}"></div>
+        <div class="field"><label for="k-c-${esc(k.id)}">Ikona</label><select id="k-c-${esc(k.id)}" name="ikona">${KAT_IKONY.map(([v, l]) => `<option value="${v}"${v === k.ikona ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+        <div class="field small-field"><label for="k-p-${esc(k.id)}">Pořadí</label><input id="k-p-${esc(k.id)}" name="poradi" type="number" value="${esc(k.poradi ?? 0)}"></div>
+        <button type="submit" class="btn btn-secondary btn-sm">${isNew ? 'Přidat' : 'Uložit'}</button>
+        ${isNew ? '' : `<button type="button" class="icon-btn danger" data-delkat="${esc(k.id)}" aria-label="Smazat obor ${esc(k.nazev)}"${used(k.id) ? ' disabled title="Obor používají témata, projekty nebo pracoviště"' : ''}>${icon('trash', 17)}</button>`}</form>`;
+      box.innerHTML = `<h2 class="h3">Obory</h2><div class="dept-list">${kats.map((k) => katRow(k)).join('')}</div>
+        <h3>Přidat obor</h3>${katRow({ id: '', nazev: '', ikona: 'star', poradi: kats.length + 1 }, true)}
+        <h2 class="h3 section-gap">Pracoviště</h2><div class="dept-list">${data.pracoviste.map((d) => row(d)).join('')}</div>
+        <h3>Přidat pracoviště</h3>${row({ kod: '', nazev: '', kategorie: kats[0]?.id, poradi: data.pracoviste.length + 1 }, true)}`;
+      box.addEventListener('change', (e) => {
+        const f = e.target.closest('form[data-form="kat"]');
+        if (f && e.target.name === 'ikona') $('.kat-preview', f).innerHTML = icon(e.target.value, 22);
+      });
+      box.addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-delkat]');
+        if (!b || b.disabled) return;
+        const k = kats.find((x) => x.id === b.dataset.delkat);
+        if (!(await confirmDialog(`Smazat obor „${k?.nazev}“?`, 'Smazat', true))) return;
+        try {
+          await api.deleteCategory(b.dataset.delkat);
+          toast('Obor byl smazán.', 'ok');
+          refreshPublic();
+          location.reload();
+        } catch (err) { toast(errorMessage(err), 'err'); }
+      });
       box.addEventListener('submit', async (e) => {
         e.preventDefault();
         const fm = e.target;
+        if (fm.dataset.form === 'kat') {
+          const k = { id: fm.elements.id.value.trim().toLowerCase(), nazev: fm.elements.nazev.value.trim(), ikona: fm.elements.ikona.value, poradi: Number(fm.elements.poradi.value) || 0 };
+          if (!/^[a-z][a-z0-9-]{1,30}$/.test(k.id) || !k.nazev) { toast('Vyplňte kód (malá písmena bez diakritiky, např. mosty) a název.', 'err'); return; }
+          if (fm.dataset.new && kats.some((x) => x.id === k.id)) { toast('Obor s tímto kódem už existuje.', 'err'); return; }
+          try {
+            await api.saveCategory(k);
+            toast('Obor byl uložen.', 'ok');
+            refreshPublic();
+            if (fm.dataset.new) location.reload();
+          } catch (err) { toast(errorMessage(err), 'err'); }
+          return;
+        }
         const d = { kod: fm.elements.kod.value.trim().toUpperCase(), nazev: fm.elements.nazev.value.trim(), kategorie: fm.elements.kategorie.value, poradi: Number(fm.elements.poradi.value) || 0 };
         if (!/^[A-Z0-9_-]{2,12}$/.test(d.kod) || !d.nazev) { toast('Vyplňte kód (např. K137) a název.', 'err'); return; }
         try {

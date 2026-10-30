@@ -85,7 +85,7 @@ Katalog vznikl z podkladů pracovišť (složka `expertiza`, dokumenty DOCX a ZI
 python tools/import_expertiza.py "cesta/ke/složce/expertiza"
 ```
 
-Příkaz přegeneruje `src/data/expertiza.json`, fotografie, `supabase/seed.sql` a protokol `tools/import-report.md` se seznamem míst ke kontrole (skryté položky, strojové překlady, chybějící údaje). Trvá asi minutu: fotografie, které se nezměnily, se znovu nepřevádějí (mezipaměť `tools/foto-cache.json`). Opravy překlepů v podkladech jsou v tabulce `TEXT_FIXES`, skryté položky v `SKRYT`. Témata, která pracoviště nedodala ve wordových podkladech (např. korelace digitálního obrazu, vysokorychlostní kamera a IoT měření), jsou v souboru `tools/doplnene_nabidky.json`. Importér je zařadí za ostatní témata téhož pracoviště a jejich fotky převede stejně jako ostatní.
+Příkaz přegeneruje `src/data/expertiza.json`, fotografie, `supabase/seed.sql` a protokol `tools/import-report.md` se seznamem míst ke kontrole (skryté položky, strojové překlady, chybějící údaje). Trvá asi minutu: fotografie, které se nezměnily, se znovu nepřevádějí (mezipaměť `tools/foto-cache.json`). Opravy překlepů v podkladech jsou v tabulce `TEXT_FIXES`, skryté položky v `SKRYT`, podklady nahrazené novější verzí v `NAHRAZENO`, zařazení do oboru podle obsahu v `KAT_PODLE_OBSAHU` a spolupracující pracoviště v `DALSI_PRACOVISTE`. Témata, která pracoviště nedodala ve wordových podkladech (např. korelace digitálního obrazu, vysokorychlostní kamera a IoT měření), jsou v souboru `tools/doplnene_nabidky.json`. Importér je zařadí za ostatní témata téhož pracoviště a jejich fotky převede stejně jako ostatní.
 
 Po napojení na databázi se katalog upravuje v administraci a import slouží jen k doplnění nových podkladů. Identifikátory položek (a tím i adresy stránek) vznikají z názvů – názvy už zveřejněných položek proto měňte v administraci, ne v podkladech.
 
@@ -115,4 +115,4 @@ Veřejná část webu je česky a anglicky. Jazyk se přepíná vlajkou vpravo n
 - **Anglické texty webu:** druhý argument `L('…', '…')` v `src/js/*.js`, slovník pevných textů v `src/js/i18n.js`; anglický katalog viz [Anglická verze](#anglická-verze)
 - **Barvy a písmo:** proměnné v `:root` v `src/css/app.css`
 - **Animace a videa na úvodu:** ilustrace mostu `heroSvg()` a sekce `TECH` v `src/js/public.js`, pohyb v `src/css/app.css` (třídy `hx-…`, `reveal`), videa znovu vypočte `python tools/tech_videa.py`
-- **Témata expertízy, projekty, pracoviště:** v administraci webu
+- **Témata expertízy, projekty, pracoviště a obory:** v administraci webu (záložky Expertíza, Reference a Obory a pracoviště); téma může mít kromě hlavního pracoviště i další spolupracující pracoviště

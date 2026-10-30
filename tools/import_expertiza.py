@@ -47,6 +47,8 @@ W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 # --------------------------------------------------------------------------- číselníky
 KATEGORIE = [
     ("konstrukce", "Konstrukce a statika", "beam"),
+    ("mosty", "Mosty a inženýrské konstrukce", "bridge"),            # 30. 10. 2026 na přání K134
+    ("diagnostika", "Diagnostika mostů a pozemních staveb", "diag"),  # 30. 10. 2026 na přání K134
     ("materialy", "Materiály a mikrostruktura", "flask"),
     ("budovy", "Budovy a vnitřní prostředí", "building"),
     ("technologie", "Technologie a řízení staveb", "crane"),
@@ -130,6 +132,8 @@ TEXT_FIXES = {
     "Laboratory ageing of adhesive joints and verification of the material properties of adhesives.":
         "Laboratorní stárnutí lepených spojů a ověření materiálových vlastností lepidel",
     "Surface preparation and wettability assessment.": "Příprava povrchu a hodnocení smáčivosti",
+    "Experimentální and numerický": "Experimentální a numerický",  # doplnění K134 (30. 10. 2026)
+    "Měřící jednotky": "Měřicí jednotky",
 }
 
 
@@ -595,7 +599,9 @@ def parse_offer_table(rows):
             persons += events[i][1]; i += 1
         while i < len(events) and events[i][0] == "oblast":
             areas.append(events[i][1]); i += 1
-        if len(persons) == 1 and len(areas) == 1 and not persons[0]["oblast"]:
+        # další „Oblast“ pod jedinou osobou, která jen opakuje začátek první (zbytek po smazané osobě), se zahodí
+        if (len(persons) == 1 and areas and not persons[0]["oblast"]
+                and all(norm_key(a) in norm_key(areas[0]) for a in areas[1:])):
             persons[0]["oblast"] = areas[0]
         else:
             obory += areas
@@ -712,11 +718,39 @@ SKRYT = {
     "ref-k122-analyza-casoveho-prubehu-stavby-pristavba": "týká se sporu o změnové listy – jen se souhlasem objednatele",
     "ref-k133-bezpecnostni-reseni-rozsireni": "popisuje zranitelnost kritické infrastruktury, fotografie převzatá z médií",
 }
+# Podklady nahrazené novější verzí (cesta v adresáři expertiza → důvod); importér je přeskočí.
+NAHRAZENO = {
+    "Nabidka/K134/K134-1/134-1-Nabídka vzor.docx": "nahrazeno aktualizovanou verzí z doplnění K134 (30. 10. 2026): K134-mosty/07-szz",
+    "Reference/K134/K134-1/134-1-Reference vzor-verze 2.docx": "nahrazeno verzí z doplnění K134 (30. 10. 2026): K134-mosty/01-SMA",
+}
 # Obor podle obsahu služby tam, kde se liší od oboru pracoviště.
 KAT_PODLE_OBSAHU = {
     "k122-vyvoj-cementovych-a-bezcementovych": "materialy", "k122-vyuziti-deponovanych-popelovin": "materialy",
     "k122-vyuziti-produktu-spalovani": "materialy", "k132-mikroskopie-mikrostrukturni": "materialy",
     "k122-digitalizace-robotizace-ai": "digitalizace", "k102-analyza-fyzikalne-chemickych": "materialy",
+    # obory Mosty a Diagnostika (30. 10. 2026) – další témata lze přeřadit v administraci
+    "k134-staticke-a-dynamicke-zatezovaci-zkousky-mostu": "mosty", "k134-hodnoceni-zivotniho-cyklu-mostu": "mosty",
+    "k134-zpracovani-odbornych-studii-a-posudku": "mosty", "k134-dlouhodoby-monitoring-mostu": "mosty",
+    "k134-experimentalni-a-numericky-vyvoj": "mosty",
+    "k134-diagnosticke-pruzkumy-mostu": "diagnostika", "k134-podvodni-sonarove": "diagnostika",
+    "k134-prohlidky-a-diagnostika": "diagnostika", "k133-komplexni-diagnostika-mostnich": "diagnostika",
+    "k133-stavebne-technicky-pruzkum": "diagnostika", "k210-stavebne-technicky-pruzkum": "diagnostika",
+    "k124-stavebne-technicke-pruzkumy": "diagnostika", "k123-stavebne-technicky-pruzkum": "diagnostika",
+}
+# Další pracoviště, která se na tématu podílejí (první v seznamu témat zůstává hlavní pracoviště). Lze měnit v administraci.
+DALSI_PRACOVISTE = {
+    "k132-vysokorychlostni-kamera": ["K102"],
+    "k134-staticke-a-dynamicke-zatezovaci-zkousky-mostu": ["K132", "K210"],
+    "k134-experimentalni-a-numericky-vyvoj": ["K210"], "k134-dlouhodoby-monitoring-mostu": ["K210"],
+}
+# Doložené výsledky doplněné z publikací pracovišť (podklady K134, 30. 10. 2026).
+DOLOZENO = {
+    "k134-diagnosticke-pruzkumy-mostu": [
+        "Kniha Metody pro zajištění udržitelnosti ocelových mostních konstrukcí industriálního kulturního dědictví "
+        "(projekt NAKI DG18P02OVV033, Ministerstvo kultury ČR)",
+        "Publikace Železniční mosty s předpjatou nosnou konstrukcí v síti Správy železnic (diagnostika a statické posouzení 63 mostů)",
+        "Publikace Strategická přemostění Správy železnic (expertiza 32 provozně exponovaných mostů)",
+    ],
 }
 # Příliš dlouhé názvy: kratší název a podrobnosti do úvodního popisu (klíč = začátek původního názvu).
 NAZVY = {
@@ -725,6 +759,9 @@ NAZVY = {
         "Například odezva lávek na zatížení chodci, simulace běžného provozu a vandalismu, další konfigurace "
         "zatěžovacích stavů nebo odezva konstrukce na technologické zatížení."),
     "Analýza fyzikálně-chemických parametrů povrchů pevných látek": ("Analýza fyzikálně-chemických parametrů pevných látek", ""),  # 22. 10. 2026
+    "Hodnocení mostů z hlediska nákladů životního cyklu": (  # LCA nejsou náklady – 30. 10. 2026
+        "Hodnocení životního cyklu mostů (LCC a LCA)",
+        "Hodnocení mostních konstrukcí z hlediska nákladů životního cyklu (LCC) a dopadů na životní prostředí (LCA)."),
     "Výpočetní (a technické) posouzení správnosti návrhu": (
         "Posouzení a optimalizace skladby vozovky",
         "Výpočetní a technické posouzení správnosti návrhu konstrukční skladby vozovky s ohledem na návrhové "
@@ -1106,6 +1143,7 @@ def doplnit_nabidky(nabidky, used_ids, report, warnings):
             else:
                 warnings.append(f"- fotku doplněného tématu nelze použít `{f['zdroj']}`: {(res or {}).get('error', 'nevhodný rozměr')}")
         item = {"id": oid, "pracoviste": dept, "kategorie": t.get("kategorie") or PRACOVISTE[dept][1],
+                "pracoviste_dalsi": t.get("pracoviste_dalsi") or next((v for p, v in DALSI_PRACOVISTE.items() if oid.startswith(p)), []),
                 "nazev": t["nazev"], "popis": t.get("popis", ""), "anotace": t.get("anotace", []), "vysledky": t.get("vysledky", []),
                 "garanti": t.get("garanti", []), "kontakty": [], "klicova_slova": t.get("klicova_slova", []),
                 "horizon": t.get("horizon", ""), "laborator": t.get("laborator", ""), "vystupy": t.get("vystupy", ""),
@@ -1149,6 +1187,8 @@ def main():
                 report.append(f"- přeskočeno (anglická verze): `{vrel}`"); continue
             if "vzor" in low and any("filled" in n for n in siblings if n != low):
                 report.append(f"- přeskočeno (šablona vedle vyplněné verze): `{vrel}`"); continue
+            if vrel in NAHRAZENO:
+                report.append(f"- přeskočeno ({NAHRAZENO[vrel]}): `{vrel}`"); continue
             if dept not in PRACOVISTE:
                 warnings.append(f"- neznámé pracoviště u `{vrel}`"); continue
             try:
@@ -1186,8 +1226,10 @@ def main():
                     kontakty = [{"jmeno": p["jmeno"], "email": p["email"], "telefon": p["telefon"]} for p in osoby if p["jmeno"] or p["email"]]
                     nabidky.append({
                         "id": oid, "pracoviste": dept, "kategorie": next((v for p, v in KAT_PODLE_OBSAHU.items() if oid.startswith(p)), kat),
-                        "nazev": o["nazev"], "popis": o["popis"],
-                        "anotace": o["anotace"][:20], "vysledky": o.get("vysledky", []), "garanti": garanti, "kontakty": kontakty,
+                        "pracoviste_dalsi": next((v for p, v in DALSI_PRACOVISTE.items() if oid.startswith(p)), []),
+                        "nazev": o["nazev"], "popis": o["popis"], "anotace": o["anotace"][:20],
+                        "vysledky": o.get("vysledky", []) + next((v for p, v in DOLOZENO.items() if oid.startswith(p)), []),
+                        "garanti": garanti, "kontakty": kontakty,
                         "klicova_slova": o["klicova_slova"], "horizon": o["horizon"], "laborator": vlastni_laborator(o["laborator"], dept),
                         "vystupy": o["vystupy"], "formy": o["formy"], "web": o["web"], "foto": foto,
                         "zverejneno": not hidden, "poradi": len(nabidky) + 1, "zdroj": vrel,

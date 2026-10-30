@@ -45,7 +45,8 @@ PRACOVISTE = {
     "K283": "Laboratory of Advanced Visualization Technologies",
 }
 KATEGORIE = {
-    "konstrukce": "Structural engineering", "materialy": "Materials and microstructure", "budovy": "Buildings and indoor environment",
+    "konstrukce": "Structural engineering", "mosty": "Bridges and engineering structures",
+    "diagnostika": "Diagnostics of bridges and buildings", "materialy": "Materials and microstructure", "budovy": "Buildings and indoor environment",
     "technologie": "Construction technology and management", "geotechnika": "Geotechnics and underground structures",
     "doprava": "Transport infrastructure", "voda": "Water and landscape", "geodezie": "Geodesy and 3D documentation",
     "architektura": "Architecture, urban planning and cultural heritage", "digitalizace": "Digitalization, AI and measurement",

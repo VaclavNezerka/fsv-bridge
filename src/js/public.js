@@ -12,6 +12,9 @@ export const state = { catalog: null, index: null };
 const dept = (kod) => state.catalog.pracoviste.find((p) => p.kod === kod);
 const deptName = (kod) => dept(kod)?.nazev || kod || '';
 const kat = (id) => state.catalog.kategorie.find((k) => k.id === id);
+// téma může mít více pracovišť: hlavní a spolupracující (pracoviste_dalsi)
+const deptsOf = (n) => [n.pracoviste, ...(n.pracoviste_dalsi || []).filter((k) => k && k !== n.pracoviste)];
+const otherDepts = (n) => deptsOf(n).slice(1).map(deptName).filter(Boolean);
 const offerById = (id) => state.catalog.nabidky.find((n) => n.id === id);
 // laboratoř či tým jen tehdy, když neopakuje název pracoviště (např. „ČVUT v Praze, Fakulta stavební, Katedra geomatiky“)
 const labName = (n) => (n.laborator && !norm(n.laborator).includes(norm(deptName(n.pracoviste))) ? n.laborator : '');
@@ -33,7 +36,7 @@ function buildIndex() {
   state.index = new Map(state.catalog.nabidky.map((n) => [n.id, {
     title: norm(n.nazev),
     kw: norm([...(n.klicova_slova || []), n.horizon, kat(n.kategorie)?.nazev].join(' ')),
-    dept: norm([n.pracoviste, deptName(n.pracoviste), n.laborator, ...(n.garanti || []).map((g) => g.oblast)].join(' ')), // jména garantů web neuvádí
+    dept: norm([...deptsOf(n), ...deptsOf(n).map(deptName), n.laborator, ...(n.garanti || []).map((g) => g.oblast)].join(' ')), // jména garantů web neuvádí
     body: norm([n.popis, ...(n.anotace || []), ...(n.vysledky || []), n.vystupy, n.formy].join(' ')),
   }]));
 }
@@ -81,7 +84,7 @@ function offerCard(n) {
   return `<article class="ocard">
     <div class="ocard-media">${f ? img(f, '') : placeholder(n.kategorie)}</div>
     <div class="ocard-body">
-      <p class="ocard-dept">${esc(deptName(n.pracoviste))}</p>
+      <p class="ocard-dept">${esc(deptsOf(n).map(deptName).join(' · '))}</p>
       <h3 class="ocard-title"><a class="stretched" href="#/nabidka/${encodeURIComponent(n.id)}">${esc(n.nazev)}</a></h3>
       <p class="ocard-text">${esc(truncate(text, 150))}</p>
       ${n.klicova_slova?.length ? `<ul class="tags" aria-label="${L('Klíčová slova', 'Keywords')}">${n.klicova_slova.slice(0, 3).map((k) => `<li>${esc(truncate(k, 32))}</li>`).join('')}</ul>` : ''}
@@ -283,7 +286,7 @@ export function viewHome() {
 export function viewCatalog(params) {
   const c = state.catalog;
   const f = { q: params.get('q') || '', k: params.get('k') || '', p: params.get('p') || '' };
-  const deptOptions = c.pracoviste.filter((p) => c.nabidky.some((n) => n.pracoviste === p.kod));
+  const deptOptions = c.pracoviste.filter((p) => c.nabidky.some((n) => deptsOf(n).includes(p.kod)));
   return {
     title: L('Co umíme', 'Our expertise'),
     html: `<div class="wrap page">
@@ -309,7 +312,7 @@ export function viewCatalog(params) {
       const render = () => {
         let list = c.nabidky;
         if (f.k) list = list.filter((n) => n.kategorie === f.k);
-        if (f.p) list = list.filter((n) => n.pracoviste === f.p);
+        if (f.p) list = list.filter((n) => deptsOf(n).includes(f.p));
         list = searchOffers(f.q, list);
         const filtered = f.q || f.k || f.p;
         const verb = L(list.length >= 2 && list.length <= 4 ? 'odpovídají' : 'odpovídá', list.length === 1 ? 'matches' : 'match');
@@ -385,7 +388,8 @@ export function viewOffer(id) {
   const refs = state.catalog.reference.filter((r) => r.pracoviste === n.pracoviste).slice(0, 3);
   const web = safeUrl(n.web);
   // Místo jmen garantů se uvádí pracoviště; poptávku k tématu dostane koordinátor i toto pracoviště.
-  const facts = [[L('Pracoviště', 'Department'), deptName(n.pracoviste) + (labName(n) ? `, ${labName(n)}` : '')], [L('Obor', 'Field'), k?.nazev],
+  const facts = [[L('Pracoviště', 'Department'), deptName(n.pracoviste) + (labName(n) ? `, ${labName(n)}` : '')],
+    [L('Ve spolupráci s', 'In cooperation with'), otherDepts(n).join(', ')], [L('Obor', 'Field'), k?.nazev],
     [L('Hlavní výstupy', 'Main outputs'), n.vystupy], [L('Formy spolupráce', 'Forms of cooperation'), n.formy]].filter(([, v]) => v);
   return {
     title: n.nazev,
@@ -465,7 +469,7 @@ export function viewReference(id) {
   const r = refById(id);
   if (!r) return viewNotFound(L('Tento projekt jsme nenašli.', 'We could not find this project.'));
   const link = safeUrl(r.odkaz);
-  const related = state.catalog.nabidky.filter((n) => n.pracoviste === r.pracoviste).slice(0, 3);
+  const related = state.catalog.nabidky.filter((n) => deptsOf(n).includes(r.pracoviste)).slice(0, 3);
   const facts = [[L('Financováno z', 'Funded by'), r.poskytovatel], [L('Typ projektu', 'Project type'), r.typ], [L('Zaměření', 'Focus'), r.zamereni],
     [L('Řešitel', 'Investigators'), r.resitel], [L('Kód projektu', 'Project code'), r.kod], [L('Období', 'Period'), r.obdobi]].filter(([, v]) => v);
   return {
@@ -525,7 +529,7 @@ export function viewRequest(params) {
           <div class="error-summary" id="err-sum" tabindex="-1" role="alert" hidden></div>
           ${tema ? `<div class="topic-link"><p class="eyebrow">${L('Poptávka k tématu', 'Enquiry about the topic')}</p>
             <p class="topic-link-title"><a href="#/nabidka/${encodeURIComponent(tema.id)}">${esc(tema.nazev)}</a></p>
-            <p class="small">${esc(L(`Poptávku dostane koordinátor i ${deptName(tema.pracoviste)}.`, `The enquiry will go to our coordinator and to the ${deptName(tema.pracoviste)}.`))}
+            <p class="small">${esc(L(`Poptávku dostane koordinátor i ${deptsOf(tema).map(deptName).join(', ')}.`, `The enquiry will go to our coordinator and to the ${deptsOf(tema).map(deptName).join(', ')}.`))}
               <a href="#/poptavka">${L('Zadat obecnou poptávku', 'Send a general enquiry instead')}</a></p></div>` : ''}
           <div class="field" data-field="popis">
             <label for="f-popis">${L('Co potřebujete?', 'What do you need?')} <span class="req" aria-hidden="true">*</span></label>

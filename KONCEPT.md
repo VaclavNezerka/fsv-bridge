@@ -40,7 +40,7 @@ FSv Bridge nenahrazuje přímé vazby kateder na průmysl. Kdo už pracoviště 
 | Zadat poptávku | `#/poptavka`, `#/odeslano` | Formulář na jedné stránce. Výsledkem je číslo poptávky (např. FSVB-2026-0001) a popis dalšího postupu |
 | Právní informace | `#/osobni-udaje`, `#/podminky`, `#/pristupnost` | Návrhy textů k posouzení |
 | Anglická verze | `?lang=en#/…` (vlajka vpravo nahoře) | Všechny veřejné stránky v angličtině, volba jazyka se pamatuje v prohlížeči |
-| Administrace | `#/admin/…` (zámek „Admin“ vpravo nahoře) | Poptávky a zakázky, expertíza, reference, pracoviště a účet (vlastní údaje, změna hesla, další správci, dvoufázové ověření) |
+| Administrace | `#/admin/…` (zámek „Admin“ vpravo nahoře) | Poptávky a zakázky, expertíza (téma může mít i další spolupracující pracoviště), reference, obory a pracoviště (obory lze přidávat, přejmenovat a řadit) a účet (vlastní údaje, změna hesla, další správci, dvoufázové ověření) |
 
 ## 5. Ochrana proti robotům bez CAPTCHA
 

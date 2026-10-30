@@ -87,6 +87,8 @@ const ICONS = {
   target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
   columns: '<path d="M3 21h18M4 9h16M12 3l9 4H3z"/><path d="M6 9v9M10 9v9M14 9v9M18 9v9"/>',
   chip: '<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/>',
+  bridge: '<path d="M2 8h20"/><path d="M3 20c0-5 4-9 9-9s9 4 9 9"/><path d="M7 8v4.6M12 8v3M17 8v4.6"/>',
+  diag: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.6-4.6M6.6 10.8h1.9l1.1-2.3 1.9 4.5 1.1-2.2h1.4"/>',
   cap: '<path d="M2 9.5l10-5 10 5-10 5z"/><path d="M6 11.5v4.8c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.8"/><path d="M22 9.5v5"/>',
 };
 export function icon(name, size = 24, cls = '') {

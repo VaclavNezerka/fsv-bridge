@@ -192,6 +192,8 @@ main:focus { outline: none; }
 
 /* Barvy oblastí expertízy */
 .kat-konstrukce, .ph-konstrukce { --c: #0065BD; }
+.kat-mosty, .ph-mosty { --c: #0B5C8E; }
+.kat-diagnostika, .ph-diagnostika { --c: #A64B12; }
 .kat-materialy, .ph-materialy { --c: #6B4FBB; }
 .kat-budovy, .ph-budovy { --c: #00828C; }
 .kat-technologie, .ph-technologie { --c: #B45F06; }
@@ -476,6 +478,11 @@ table.data a:hover, table.data .linklike:hover { text-decoration: underline; }
 .dept-row .grow { flex: 1 1 280px; }
 .dept-row .small-field { width: 90px; min-width: 90px; }
 .dept-row input[readonly] { background: var(--line-2); }
+.kat-preview { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--blue-50); color: var(--blue); align-self: end; }
+.section-gap { margin-top: 36px; }
+.check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 4px 16px; max-height: 210px; overflow: auto;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; }
+.check-grid .check-inline { padding: 2px 0; font-size: .88rem; }
 .login { text-align: left; }
 .login-icon { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 16px; background: var(--blue-50); color: var(--blue); margin-bottom: 12px; }
 .login .field { margin-bottom: 16px; }

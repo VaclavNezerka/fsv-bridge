@@ -86,6 +86,9 @@ create table if not exists public.nabidky (
   upraveno      timestamptz not null default now()
 );
 
+-- další pracoviště, která se na tématu podílejí (30. 10. 2026)
+alter table public.nabidky add column if not exists pracoviste_dalsi text[] not null default '{}';
+
 create table if not exists public.reference (
   id             text primary key,
   pracoviste     text references public.pracoviste (kod) on update cascade on delete set null,
@@ -824,9 +827,10 @@ begin
   on conflict (kod) do update set nazev = excluded.nazev, kategorie = excluded.kategorie, poradi = excluded.poradi
     where prepsat;
 
-  insert into public.nabidky (id, pracoviste, kategorie, nazev, popis, anotace, vysledky, garanti, kontakty,
+  insert into public.nabidky (id, pracoviste, pracoviste_dalsi, kategorie, nazev, popis, anotace, vysledky, garanti, kontakty,
                               klicova_slova, horizon, laborator, vystupy, formy, web, foto, zverejneno, poradi, zdroj)
-    select x.id, x.pracoviste, x.kategorie, x.nazev, coalesce(x.popis, ''),
+    select x.id, x.pracoviste, array(select jsonb_array_elements_text(coalesce(x.pracoviste_dalsi, '[]'))),
+           x.kategorie, x.nazev, coalesce(x.popis, ''),
            array(select jsonb_array_elements_text(coalesce(x.anotace, '[]'))),
            array(select jsonb_array_elements_text(coalesce(x.vysledky, '[]'))),
            coalesce(x.garanti, '[]'), coalesce(x.kontakty, '[]'),
@@ -834,11 +838,12 @@ begin
            coalesce(x.horizon, ''), coalesce(x.laborator, ''), coalesce(x.vystupy, ''), coalesce(x.formy, ''),
            coalesce(x.web, ''), coalesce(x.foto, '[]'), coalesce(x.zverejneno, true), coalesce(x.poradi, 0), coalesce(x.zdroj, '')
     from jsonb_to_recordset(d -> 'nabidky') as x (
-      id text, pracoviste text, kategorie text, nazev text, popis text, anotace jsonb, vysledky jsonb, garanti jsonb,
+      id text, pracoviste text, pracoviste_dalsi jsonb, kategorie text, nazev text, popis text, anotace jsonb, vysledky jsonb, garanti jsonb,
       kontakty jsonb, klicova_slova jsonb, horizon text, laborator text, vystupy text, formy text, web text, foto jsonb,
       zverejneno boolean, poradi int, zdroj text)
   on conflict (id) do update set
-    pracoviste = excluded.pracoviste, kategorie = excluded.kategorie, nazev = excluded.nazev, popis = excluded.popis,
+    pracoviste = excluded.pracoviste, pracoviste_dalsi = excluded.pracoviste_dalsi, kategorie = excluded.kategorie,
+    nazev = excluded.nazev, popis = excluded.popis,
     anotace = excluded.anotace, vysledky = excluded.vysledky, garanti = excluded.garanti, kontakty = excluded.kontakty,
     klicova_slova = excluded.klicova_slova, horizon = excluded.horizon, laborator = excluded.laborator,
     vystupy = excluded.vystupy, formy = excluded.formy, web = excluded.web, foto = excluded.foto,

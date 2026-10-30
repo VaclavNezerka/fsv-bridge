@@ -475,6 +475,8 @@ const demo = {
   },
   async deleteRef(id) { const f = await demoFull(); f.reference = f.reference.filter((x) => x.id !== id); demoSave(f); },
   async saveDept(d) { const f = await demoFull(); upsert(f.pracoviste, d, 'kod'); demoSave(f); return d; },
+  async saveCategory(k) { const f = await demoFull(); upsert(f.kategorie, k); demoSave(f); return k; },
+  async deleteCategory(id) { const f = await demoFull(); f.kategorie = f.kategorie.filter((x) => x.id !== id); demoSave(f); },
   async uploadPhoto(file) {
     const { full, thumb } = await resizeImage(file, 1200, 560);
     return { src: await blobToDataUrl(full.blob), thumb: await blobToDataUrl(thumb.blob), w: full.w, h: full.h, popis: '' };
@@ -582,7 +584,7 @@ function xhrUpload(url, file, token, onProgress) {
     x.send(fd);
   });
 }
-const OFFER_COLS = ['id', 'pracoviste', 'kategorie', 'nazev', 'popis', 'anotace', 'vysledky', 'garanti', 'kontakty', 'klicova_slova',
+const OFFER_COLS = ['id', 'pracoviste', 'pracoviste_dalsi', 'kategorie', 'nazev', 'popis', 'anotace', 'vysledky', 'garanti', 'kontakty', 'klicova_slova',
   'horizon', 'laborator', 'vystupy', 'formy', 'web', 'foto', 'zverejneno', 'poradi', 'zdroj'];
 const REF_COLS = ['id', 'pracoviste', 'kategorie', 'nazev', 'kod', 'poskytovatel', 'resitel', 'typ', 'zamereni', 'obdobi', 'potreba',
   'dodali', 'prinos', 'klicovy_prinos', 'vice', 'odkaz', 'jazyk', 'druh', 'souhlas', 'foto', 'zverejneno', 'poradi', 'zdroj'];
@@ -713,6 +715,12 @@ const live = {
     this._adminCat = null;
     return r[0];
   },
+  async saveCategory(k) {
+    const r = await call('/rest/v1/kategorie?on_conflict=id', { method: 'POST', body: k, prefer: 'resolution=merge-duplicates,return=representation' });
+    this._adminCat = null;
+    return r[0];
+  },
+  async deleteCategory(id) { await call(`/rest/v1/kategorie?id=eq.${enc(id)}`, { method: 'DELETE' }); this._adminCat = null; },
   async uploadPhoto(file) {
     await ensureFresh();
     const { full, thumb } = await resizeImage(file);
